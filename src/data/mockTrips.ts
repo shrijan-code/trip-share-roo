@@ -10,6 +10,7 @@ export const mockTrips: TripProps[] = [
     time: '08:00 AM',
     price: 45,
     seats: 3,
+    isPublic: true,
     driver: {
       id: '101',
       name: 'Michael',
@@ -26,6 +27,7 @@ export const mockTrips: TripProps[] = [
     time: '07:30 AM',
     price: 38,
     seats: 2,
+    isPublic: true,
     driver: {
       id: '102',
       name: 'Sarah',
@@ -42,6 +44,7 @@ export const mockTrips: TripProps[] = [
     time: '09:00 AM',
     price: 48,
     seats: 4,
+    isPublic: true,
     driver: {
       id: '103',
       name: 'David',
@@ -58,6 +61,7 @@ export const mockTrips: TripProps[] = [
     time: '10:30 AM',
     price: 25,
     seats: 2,
+    isPublic: false,
     driver: {
       id: '104',
       name: 'Emma',
@@ -74,6 +78,7 @@ export const mockTrips: TripProps[] = [
     time: '07:00 AM',
     price: 47,
     seats: 1,
+    isPublic: true,
     driver: {
       id: '105',
       name: 'James',
@@ -90,6 +95,7 @@ export const mockTrips: TripProps[] = [
     time: '06:30 AM',
     price: 39,
     seats: 3,
+    isPublic: false,
     driver: {
       id: '106',
       name: 'Olivia',

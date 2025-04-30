@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import FindRides from "./pages/FindRides";
 import TripDetails from "./pages/TripDetails";
 import OfferRide from "./pages/OfferRide";
+import RequestRide from "./pages/RequestRide";
 import HowItWorks from "./pages/HowItWorks";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/find-rides" element={<FindRides />} />
           <Route path="/trips/:id" element={<TripDetails />} />
           <Route path="/offer-ride" element={<OfferRide />} />
+          <Route path="/request-ride" element={<RequestRide />} />
           <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />

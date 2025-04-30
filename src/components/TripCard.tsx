@@ -5,7 +5,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, MapPin, User, Users } from "lucide-react";
+import { Calendar, Clock, MapPin, User, Users, Globe } from "lucide-react";
 
 export interface TripProps {
   id: string;
@@ -15,6 +15,7 @@ export interface TripProps {
   time: string;
   price: number;
   seats: number;
+  isPublic?: boolean;
   driver: {
     id: string;
     name: string;
@@ -24,14 +25,21 @@ export interface TripProps {
   };
 }
 
-const TripCard: React.FC<TripProps> = ({ id, from, to, date, time, price, seats, driver }) => {
+const TripCard: React.FC<TripProps> = ({ id, from, to, date, time, price, seats, isPublic = true, driver }) => {
   return (
     <Card className="trip-card h-full">
       <CardContent className="p-0">
         <div className="p-4 pb-0 flex-grow">
           <div className="flex justify-between items-start mb-4">
             <div>
-              <h3 className="font-bold text-lg">{from} → {to}</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-lg">{from} → {to}</h3>
+                {isPublic && (
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <Globe className="h-3 w-3" /> Public
+                  </Badge>
+                )}
+              </div>
               <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
                 <div className="flex items-center gap-1">
                   <Calendar className="h-4 w-4" />
