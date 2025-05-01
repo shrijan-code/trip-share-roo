@@ -14,6 +14,7 @@ import HowItWorks from "./pages/HowItWorks";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import NotFound from "./pages/NotFound";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -28,8 +29,16 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/find-rides" element={<FindRides />} />
             <Route path="/trips/:id" element={<TripDetails />} />
-            <Route path="/offer-ride" element={<OfferRide />} />
-            <Route path="/request-ride" element={<RequestRide />} />
+            <Route path="/offer-ride" element={
+              <ProtectedRoute>
+                <OfferRide />
+              </ProtectedRoute>
+            } />
+            <Route path="/request-ride" element={
+              <ProtectedRoute>
+                <RequestRide />
+              </ProtectedRoute>
+            } />
             <Route path="/how-it-works" element={<HowItWorks />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />

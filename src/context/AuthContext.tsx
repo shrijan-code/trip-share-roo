@@ -8,8 +8,8 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
-  signUp: (email: string, password: string, firstName: string, lastName: string, phone: string) => Promise<void>;
-  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, firstName: string, lastName: string, phone: string) => Promise<{user: User | null, session: Session | null} | null>;
+  signIn: (email: string, password: string) => Promise<{user: User | null, session: Session | null} | null>;
   signOut: () => Promise<void>;
 }
 
@@ -70,7 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         title: "Error signing up",
         description: (error as Error).message,
       });
-      throw error;
+      return null;
     }
   };
 
@@ -96,7 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         title: "Error signing in",
         description: (error as Error).message,
       });
-      throw error;
+      return null;
     }
   };
 

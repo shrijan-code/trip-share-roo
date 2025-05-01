@@ -53,14 +53,16 @@ const Signup = () => {
   const onSubmit = async (values: SignupFormValues) => {
     setIsSubmitting(true);
     try {
-      await signUp(
+      const data = await signUp(
         values.email,
         values.password,
         values.firstName,
         values.lastName,
         values.phone
       );
-      navigate("/");
+      if (data?.user) {
+        navigate("/");
+      }
     } catch (error) {
       console.error("Error during signup:", error);
     } finally {
