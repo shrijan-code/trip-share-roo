@@ -16,6 +16,7 @@ import Signup from "./pages/Signup";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import MyBookings from "./pages/MyBookings";
+import MyTrips from "./pages/MyTrips";
 import FAQPage from "./pages/faq";
 import AboutUsPage from "./pages/AboutUs";
 import ContactPage from "./pages/Contact";
@@ -51,6 +52,11 @@ const App = () => (
             <Route path="/my-bookings" element={
               <ProtectedRoute>
                 <MyBookings />
+              </ProtectedRoute>
+            } />
+            <Route path="/my-trips" element={
+              <ProtectedRoute>
+                <MyTrips />
               </ProtectedRoute>
             } />
             <Route path="/how-it-works" element={<HowItWorks />} />

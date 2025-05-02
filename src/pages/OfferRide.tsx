@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -9,17 +10,88 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/use-toast";
 import { CalendarIcon, MapPin, DollarSign, Clock, Car, Users, Globe, Lock } from "lucide-react";
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 const OfferRide = () => {
   const { toast } = useToast();
   const [isPublic, setIsPublic] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Form state
+  const [formData, setFormData] = useState({
+    origin: '',
+    destination: '',
+    pickup: '',
+    dropoff: '',
+    date: '',
+    time: '',
+    vehicle: '',
+    seats: '',
+    price: '',
+    notes: ''
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Ride submitted",
-      description: `Your ride has been successfully ${isPublic ? 'listed publicly' : 'saved as private'}!`,
-    });
+
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please login to offer a ride",
+        variant: "destructive"
+      });
+      navigate('/login');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Format departure date and time
+      const departureDateObj = new Date(`${formData.date}T${formData.time}`);
+      
+      // Create trip record
+      const { data, error } = await supabase
+        .from('trips')
+        .insert({
+          driver_id: user.id,
+          origin: formData.origin,
+          destination: formData.destination,
+          departure_date: departureDateObj.toISOString(),
+          price: parseFloat(formData.price),
+          seats_available: parseInt(formData.seats),
+          description: formData.notes,
+          is_public: isPublic
+        })
+        .select();
+
+      if (error) throw error;
+
+      toast({
+        title: "Ride submitted",
+        description: `Your ride has been successfully ${isPublic ? 'listed publicly' : 'saved as private'}!`,
+      });
+
+      // Navigate to my trips page
+      navigate('/my-trips');
+    } catch (error) {
+      console.error('Error submitting ride:', error);
+      toast({
+        title: "Submission failed",
+        description: "There was an error submitting your ride. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -52,20 +124,44 @@ const OfferRide = () => {
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <Label htmlFor="from">From</Label>
-                        <Input id="from" placeholder="Departure city" required />
+                        <Label htmlFor="origin">From</Label>
+                        <Input 
+                          id="origin" 
+                          placeholder="Departure city" 
+                          required 
+                          value={formData.origin}
+                          onChange={handleChange}
+                        />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="to">To</Label>
-                        <Input id="to" placeholder="Destination city" required />
+                        <Label htmlFor="destination">To</Label>
+                        <Input 
+                          id="destination" 
+                          placeholder="Destination city" 
+                          required 
+                          value={formData.destination}
+                          onChange={handleChange}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="pickup">Pickup location</Label>
-                        <Input id="pickup" placeholder="E.g. Central Station" required />
+                        <Input 
+                          id="pickup" 
+                          placeholder="E.g. Central Station" 
+                          required 
+                          value={formData.pickup}
+                          onChange={handleChange}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="dropoff">Drop-off location</Label>
-                        <Input id="dropoff" placeholder="E.g. Central Station" required />
+                        <Input 
+                          id="dropoff" 
+                          placeholder="E.g. Central Station" 
+                          required 
+                          value={formData.dropoff}
+                          onChange={handleChange}
+                        />
                       </div>
                     </div>
                   </div>
@@ -79,11 +175,23 @@ const OfferRide = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <Label htmlFor="date">Date</Label>
-                        <Input id="date" type="date" required />
+                        <Input 
+                          id="date" 
+                          type="date" 
+                          required 
+                          value={formData.date}
+                          onChange={handleChange}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="time">Departure Time</Label>
-                        <Input id="time" type="time" required />
+                        <Input 
+                          id="time" 
+                          type="time" 
+                          required 
+                          value={formData.time}
+                          onChange={handleChange}
+                        />
                       </div>
                     </div>
                   </div>
@@ -97,7 +205,13 @@ const OfferRide = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <Label htmlFor="vehicle">Vehicle model</Label>
-                        <Input id="vehicle" placeholder="E.g. Toyota Corolla" required />
+                        <Input 
+                          id="vehicle" 
+                          placeholder="E.g. Toyota Corolla" 
+                          required 
+                          value={formData.vehicle}
+                          onChange={handleChange}
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="seats">Available seats</Label>
@@ -105,6 +219,8 @@ const OfferRide = () => {
                           id="seats" 
                           required
                           className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          value={formData.seats}
+                          onChange={handleChange}
                         >
                           <option value="">Select seats</option>
                           <option value="1">1 seat</option>
@@ -128,7 +244,16 @@ const OfferRide = () => {
                         <Label htmlFor="price">Price per seat (AUD)</Label>
                         <div className="relative">
                           <span className="absolute left-3 top-1/2 transform -translate-y-1/2">$</span>
-                          <Input id="price" type="number" className="pl-7" placeholder="0.00" required min="1" />
+                          <Input 
+                            id="price" 
+                            type="number" 
+                            className="pl-7" 
+                            placeholder="0.00" 
+                            required 
+                            min="1"
+                            value={formData.price}
+                            onChange={handleChange}
+                          />
                         </div>
                       </div>
                       <div className="space-y-2">
@@ -195,13 +320,25 @@ const OfferRide = () => {
                       id="notes" 
                       className="w-full min-h-[100px] px-3 py-2 rounded-md border border-input bg-background ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       placeholder="Share any additional details about your trip..."
+                      value={formData.notes}
+                      onChange={handleChange}
                     />
                   </div>
                   
                   {/* Submit */}
                   <div className="pt-4">
-                    <Button type="submit" size="lg" className="w-full">
-                      {isPublic ? "Publish Ride" : "Save as Private"}
+                    <Button 
+                      type="submit" 
+                      size="lg" 
+                      className="w-full"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting 
+                        ? "Processing..." 
+                        : isPublic 
+                          ? "Publish Ride" 
+                          : "Save as Private"
+                      }
                     </Button>
                   </div>
                 </form>

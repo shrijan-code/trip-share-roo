@@ -36,7 +36,27 @@ const BookingCard: React.FC<BookingCardProps> = ({ id, price, seats }) => {
     setIsBooking(true);
 
     try {
-      const { data, error } = await supabase
+      // First check if there are enough seats available
+      const { data: tripData, error: tripError } = await supabase
+        .from('trips')
+        .select('seats_available')
+        .eq('id', id)
+        .single();
+
+      if (tripError) throw tripError;
+      
+      if (!tripData || tripData.seats_available < 1) {
+        toast({
+          title: "No seats available",
+          description: "Sorry, all seats for this trip have been booked.",
+          variant: "destructive"
+        });
+        setIsBooking(false);
+        return;
+      }
+
+      // Insert the booking
+      const { error } = await supabase
         .from('bookings')
         .insert({
           trip_id: id,
@@ -47,10 +67,20 @@ const BookingCard: React.FC<BookingCardProps> = ({ id, price, seats }) => {
 
       if (error) throw error;
 
+      // Update available seats in the trip
+      const { error: updateError } = await supabase
+        .from('trips')
+        .update({ seats_available: tripData.seats_available - 1 })
+        .eq('id', id);
+
+      if (updateError) throw updateError;
+
       toast({
         title: "Booking successful!",
         description: "Your trip booking has been submitted.",
       });
+      
+      navigate('/my-bookings');
       
     } catch (error) {
       console.error('Error booking trip:', error);
@@ -97,9 +127,9 @@ const BookingCard: React.FC<BookingCardProps> = ({ id, price, seats }) => {
             className="w-full" 
             size="lg" 
             onClick={handleBookTrip}
-            disabled={isBooking}
+            disabled={isBooking || seats <= 0}
           >
-            {isBooking ? "Processing..." : "Book This Trip"}
+            {isBooking ? "Processing..." : seats <= 0 ? "Sold Out" : "Book This Trip"}
           </Button>
           
           <div className="text-sm text-gray-500 text-center">
