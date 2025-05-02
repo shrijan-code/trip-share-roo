@@ -9,6 +9,7 @@ import TripInfo from '@/components/trips/TripInfo';
 import BookingCard from '@/components/trips/BookingCard';
 import Breadcrumbs from '@/components/trips/Breadcrumbs';
 import { supabase } from '@/integrations/supabase/client';
+import { TripProps } from '@/components/TripCard';
 
 interface Trip {
   id: string;
@@ -20,18 +21,11 @@ interface Trip {
   seats_available: number;
   is_public: boolean;
   driver_id: string;
-  driver?: {
-    id: string;
-    name: string;
-    avatar: string;
-    rating: number;
-    trips: number;
-  };
 }
 
 const TripDetails = () => {
   const { id } = useParams<{ id: string }>();
-  const [trip, setTrip] = useState<Trip | null>(null);
+  const [trip, setTrip] = useState<TripProps | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -50,9 +44,21 @@ const TripDetails = () => {
         }
 
         if (data) {
+          // Format the date and time from the departure_date
+          const departureDate = new Date(data.departure_date);
+          const formattedDate = departureDate.toLocaleDateString();
+          const formattedTime = departureDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          
           // Convert to expected format for TripInfo component
-          const tripWithDriver: Trip = {
-            ...data,
+          const formattedTrip: TripProps = {
+            id: data.id,
+            from: data.origin,
+            to: data.destination,
+            date: formattedDate,
+            time: formattedTime,
+            price: Number(data.price),
+            seats: data.seats_available,
+            isPublic: data.is_public,
             driver: {
               id: data.driver_id,
               name: "Trip Driver", // Placeholder - would fetch from profiles table
@@ -62,7 +68,7 @@ const TripDetails = () => {
             }
           };
           
-          setTrip(tripWithDriver);
+          setTrip(formattedTrip);
         }
       } catch (error) {
         console.error('Error fetching trip:', error);
@@ -101,7 +107,7 @@ const TripDetails = () => {
               <BookingCard 
                 id={trip.id} 
                 price={trip.price} 
-                seats={trip.seats_available} 
+                seats={trip.seats} 
               />
             </div>
           </div>

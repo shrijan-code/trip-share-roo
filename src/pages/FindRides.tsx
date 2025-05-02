@@ -1,17 +1,83 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import SearchForm from '@/components/SearchForm';
 import TripCard from '@/components/TripCard';
-import { mockTrips } from '@/data/mockTrips';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Calendar, MapPin, ArrowDown, ArrowUp } from "lucide-react";
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
+
+interface TripData {
+  id: string;
+  origin: string;
+  destination: string;
+  departure_date: string;
+  price: number;
+  seats_available: number;
+  is_public: boolean;
+  driver_id: string;
+}
 
 const FindRides = () => {
   const [sortBy, setSortBy] = useState("date");
-  const [trips, setTrips] = useState(mockTrips);
+  const [trips, setTrips] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchPublicTrips = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('trips')
+          .select('*')
+          .eq('is_public', true)
+          .order('departure_date', { ascending: true });
+
+        if (error) throw error;
+
+        if (data) {
+          // Transform to expected format for TripCard
+          const formattedTrips = data.map((trip: TripData) => {
+            const departureDate = new Date(trip.departure_date);
+            return {
+              id: trip.id,
+              from: trip.origin,
+              to: trip.destination,
+              date: departureDate.toLocaleDateString(),
+              time: departureDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              price: Number(trip.price),
+              seats: trip.seats_available,
+              isPublic: trip.is_public,
+              driver: {
+                id: trip.driver_id,
+                name: "Trip Driver", // Placeholder for now
+                avatar: "",
+                rating: 4.5,
+                trips: 10
+              }
+            };
+          });
+          
+          setTrips(formattedTrips);
+        }
+      } catch (error) {
+        console.error('Error fetching trips:', error);
+        toast({
+          title: "Error fetching trips",
+          description: "Could not load available trips. Please try again.",
+          variant: "destructive"
+        });
+        setTrips([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPublicTrips();
+  }, [toast]);
 
   const handleSort = (value: string) => {
     setSortBy(value);
@@ -25,8 +91,7 @@ const FindRides = () => {
         sortedTrips.sort((a, b) => b.price - a.price);
         break;
       case "date":
-        // Simple string comparison for date+time (in a real app we'd use proper date objects)
-        sortedTrips.sort((a, b) => a.date.localeCompare(b.date));
+        sortedTrips.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
         break;
       case "seats":
         sortedTrips.sort((a, b) => b.seats - a.seats);
@@ -53,7 +118,11 @@ const FindRides = () => {
           <div className="flex flex-col md:flex-row justify-between mb-6">
             <div>
               <h2 className="text-xl font-semibold mb-2">Available rides</h2>
-              <p className="text-gray-600">Showing {trips.length} trips</p>
+              {loading ? (
+                <p className="text-gray-600">Loading trips...</p>
+              ) : (
+                <p className="text-gray-600">Showing {trips.length} trips</p>
+              )}
             </div>
             
             <div className="mt-4 md:mt-0 flex items-center">
@@ -72,14 +141,20 @@ const FindRides = () => {
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {trips.map((trip) => (
-              <TripCard key={trip.id} {...trip} />
-            ))}
-          </div>
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {trips.map((trip) => (
+                <TripCard key={trip.id} {...trip} />
+              ))}
+            </div>
+          )}
           
           {/* Empty state (hidden when trips are available) */}
-          {trips.length === 0 && (
+          {!loading && trips.length === 0 && (
             <div className="text-center py-12">
               <div className="bg-gray-100 inline-block p-4 rounded-full mb-4">
                 <MapPin className="h-10 w-10 text-gray-400" />
