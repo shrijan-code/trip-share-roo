@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Button } from "@/components/ui/button";
@@ -10,11 +10,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Clock, MapPin, User, Users, MessageCircle, Shield, AlertCircle } from "lucide-react";
 import { getTripById } from '@/data/mockTrips';
 import { TripProps } from '@/components/TripCard';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
+import { useToast } from "@/components/ui/use-toast";
 
 const TripDetails = () => {
   const { id } = useParams<{ id: string }>();
   const [trip, setTrip] = useState<TripProps | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isBooking, setIsBooking] = useState(false);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (id) {
@@ -24,6 +31,52 @@ const TripDetails = () => {
       setLoading(false);
     }
   }, [id]);
+
+  const handleBookTrip = async () => {
+    if (!user) {
+      toast({
+        title: "Login required",
+        description: "Please login to book this trip",
+        variant: "destructive"
+      });
+      navigate('/login');
+      return;
+    }
+
+    if (!id || !trip) return;
+    
+    setIsBooking(true);
+
+    try {
+      const { data, error } = await supabase
+        .from('bookings')
+        .insert({
+          trip_id: id,
+          passenger_id: user.id,
+          seats: 1, // Default to 1 seat, could be made variable
+          status: 'pending'
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Booking successful!",
+        description: "Your trip booking has been submitted.",
+      });
+      
+      // In a real app, we would navigate to my-bookings page
+      // For now, we'll just show a toast message
+    } catch (error) {
+      console.error('Error booking trip:', error);
+      toast({
+        title: "Booking failed",
+        description: "There was an error processing your booking. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsBooking(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -211,8 +264,13 @@ const TripDetails = () => {
                       </div>
                     </div>
                     
-                    <Button className="w-full" size="lg">
-                      Book This Trip
+                    <Button 
+                      className="w-full" 
+                      size="lg" 
+                      onClick={handleBookTrip}
+                      disabled={isBooking}
+                    >
+                      {isBooking ? "Processing..." : "Book This Trip"}
                     </Button>
                     
                     <div className="text-sm text-gray-500 text-center">

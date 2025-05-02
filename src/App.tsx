@@ -15,6 +15,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
+import MyBookings from "./pages/MyBookings";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,11 @@ const App = () => (
             <Route path="/request-ride" element={
               <ProtectedRoute>
                 <RequestRide />
+              </ProtectedRoute>
+            } />
+            <Route path="/my-bookings" element={
+              <ProtectedRoute>
+                <MyBookings />
               </ProtectedRoute>
             } />
             <Route path="/how-it-works" element={<HowItWorks />} />
