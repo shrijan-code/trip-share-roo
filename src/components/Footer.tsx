@@ -1,11 +1,17 @@
-
+// src/components/Footer.tsx
 import React from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
 
 const Footer: React.FC = () => {
+  const router = useRouter();
+  
+  // Helper function to determine if a link is active
+  const isActive = (pathname: string) => router.pathname === pathname;
+
   return (
     <footer className="bg-gray-100 pt-12 pb-8">
-      <div className="container mx-auto">
+      <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <h3 className="font-bold text-lg mb-4">RideShareRoo</h3>
@@ -17,29 +23,73 @@ const Footer: React.FC = () => {
           <div>
             <h3 className="font-bold text-lg mb-4">Company</h3>
             <ul className="space-y-2">
-              <li><Link to="/about" className="text-gray-600 hover:text-primary">About Us</Link></li>
-              <li><Link to="/contact" className="text-gray-600 hover:text-primary">Contact</Link></li>
-              <li><Link to="/careers" className="text-gray-600 hover:text-primary">Careers</Link></li>
+              <li>
+                <Link href="/about" className={`text-gray-600 hover:text-primary ${isActive('/about') ? 'text-primary font-medium' : ''}`}>
+                  About Us
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className={`text-gray-600 hover:text-primary ${isActive('/contact') ? 'text-primary font-medium' : ''}`}>
+                  Contact
+                </Link>
+              </li>
+              <li>
+                <Link href="/careers" className={`text-gray-600 hover:text-primary ${isActive('/careers') ? 'text-primary font-medium' : ''}`}>
+                  Careers
+                </Link>
+              </li>
             </ul>
           </div>
           
           <div>
             <h3 className="font-bold text-lg mb-4">Support</h3>
             <ul className="space-y-2">
-              <li><Link to="/faq" className="text-gray-600 hover:text-primary">FAQ</Link></li>
-              <li><Link to="/safety" className="text-gray-600 hover:text-primary">Safety</Link></li>
-              <li><Link to="/privacy" className="text-gray-600 hover:text-primary">Privacy Policy</Link></li>
-              <li><Link to="/terms" className="text-gray-600 hover:text-primary">Terms of Service</Link></li>
+              <li>
+                <Link href="/faq" className={`text-gray-600 hover:text-primary ${isActive('/faq') ? 'text-primary font-medium' : ''}`}>
+                  FAQ
+                </Link>
+              </li>
+              <li>
+                <Link href="/safety" className={`text-gray-600 hover:text-primary ${isActive('/safety') ? 'text-primary font-medium' : ''}`}>
+                  Safety
+                </Link>
+              </li>
+              <li>
+                <Link href="/privacy" className={`text-gray-600 hover:text-primary ${isActive('/privacy') ? 'text-primary font-medium' : ''}`}>
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link href="/terms" className={`text-gray-600 hover:text-primary ${isActive('/terms') ? 'text-primary font-medium' : ''}`}>
+                  Terms of Service
+                </Link>
+              </li>
             </ul>
           </div>
           
           <div>
             <h3 className="font-bold text-lg mb-4">Popular Routes</h3>
             <ul className="space-y-2">
-              <li><Link to="/routes/sydney-to-melbourne" className="text-gray-600 hover:text-primary">Sydney - Melbourne</Link></li>
-              <li><Link to="/routes/melbourne-to-adelaide" className="text-gray-600 hover:text-primary">Melbourne - Adelaide</Link></li>
-              <li><Link to="/routes/brisbane-to-sydney" className="text-gray-600 hover:text-primary">Brisbane - Sydney</Link></li>
-              <li><Link to="/routes/perth-to-margaret-river" className="text-gray-600 hover:text-primary">Perth - Margaret River</Link></li>
+              <li>
+                <Link href="/routes/sydney-to-melbourne" className="text-gray-600 hover:text-primary">
+                  Sydney - Melbourne
+                </Link>
+              </li>
+              <li>
+                <Link href="/routes/melbourne-to-adelaide" className="text-gray-600 hover:text-primary">
+                  Melbourne - Adelaide
+                </Link>
+              </li>
+              <li>
+                <Link href="/routes/brisbane-to-sydney" className="text-gray-600 hover:text-primary">
+                  Brisbane - Sydney
+                </Link>
+              </li>
+              <li>
+                <Link href="/routes/perth-to-margaret-river" className="text-gray-600 hover:text-primary">
+                  Perth - Margaret River
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
