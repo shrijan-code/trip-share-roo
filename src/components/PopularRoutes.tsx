@@ -10,7 +10,8 @@ const popularRoutes = [
     distance: "878 km",
     price: "45",
     trips: "124",
-    image: "https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?w=800&auto=format&fit=crop"
+    image: "https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?w=800&auto=format&fit=crop",
+    slug: "sydney-to-melbourne"
   },
   {
     from: "Melbourne",
@@ -18,7 +19,8 @@ const popularRoutes = [
     distance: "725 km",
     price: "38",
     trips: "97",
-    image: "https://images.unsplash.com/photo-1514395462725-fb4566210144?w=800&auto=format&fit=crop"
+    image: "https://images.unsplash.com/photo-1514395462725-fb4566210144?w=800&auto=format&fit=crop",
+    slug: "melbourne-to-adelaide"
   },
   {
     from: "Brisbane",
@@ -26,7 +28,8 @@ const popularRoutes = [
     distance: "915 km",
     price: "48",
     trips: "108",
-    image: "https://images.unsplash.com/photo-1524293568345-75d62c3664f7?w=800&auto=format&fit=crop"
+    image: "https://images.unsplash.com/photo-1524293568345-75d62c3664f7?w=800&auto=format&fit=crop",
+    slug: "brisbane-to-sydney"
   },
   {
     from: "Perth", 
@@ -34,7 +37,8 @@ const popularRoutes = [
     distance: "277 km",
     price: "25",
     trips: "76",
-    image: "https://images.unsplash.com/photo-1596464716127-f2a82984de30?w=800&auto=format&fit=crop"
+    image: "https://images.unsplash.com/photo-1596464716127-f2a82984de30?w=800&auto=format&fit=crop",
+    slug: "perth-to-margaret-river"
   }
 ];
 
@@ -50,7 +54,7 @@ const PopularRoutes: React.FC = () => {
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {popularRoutes.map((route, index) => (
-          <Link key={index} to="/find-rides" className="group">
+          <Link key={index} to={`/routes/${route.slug}`} className="group">
             <Card className="overflow-hidden border-none shadow-md h-full transition-all group-hover:shadow-lg">
               <div className="relative h-40">
                 <img 

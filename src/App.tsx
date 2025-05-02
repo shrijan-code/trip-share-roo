@@ -16,6 +16,14 @@ import Signup from "./pages/Signup";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import MyBookings from "./pages/MyBookings";
+import FAQPage from "./pages/faq";
+import AboutUsPage from "./pages/AboutUs";
+import ContactPage from "./pages/Contact";
+import CareersPage from "./pages/Careers";
+import SafetyPage from "./pages/Safety";
+import PrivacyPolicyPage from "./pages/PrivacyPolicy";
+import TermsOfServicePage from "./pages/TermsOfService";
+import RouteDetailPage from "./pages/routes/RouteDetailPage";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +56,19 @@ const App = () => (
             <Route path="/how-it-works" element={<HowItWorks />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            
+            {/* Footer pages */}
+            <Route path="/about" element={<AboutUsPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/careers" element={<CareersPage />} />
+            <Route path="/faq" element={<FAQPage />} />
+            <Route path="/safety" element={<SafetyPage />} />
+            <Route path="/privacy" element={<PrivacyPolicyPage />} />
+            <Route path="/terms" element={<TermsOfServicePage />} />
+            
+            {/* Popular routes */}
+            <Route path="/routes/:fromCity-to-:toCity" element={<RouteDetailPage />} />
+            
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
