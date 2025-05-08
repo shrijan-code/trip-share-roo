@@ -5,7 +5,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, MapPin, User, Users, Globe } from "lucide-react";
+import { Calendar, Clock, MapPin, User, Users, Globe, MessageCircle } from "lucide-react";
 import { useAuth } from '@/context/AuthContext';
 import MessageButton from './messaging/MessageButton';
 
@@ -97,8 +97,11 @@ const TripCard: React.FC<TripProps> = ({ id, from, to, date, time, price, seats,
             recipientId={driver.id} 
             recipientName={driver.name} 
             tripId={id} 
-            buttonText=""
-          />
+            variant="outline"
+            size="icon"
+          >
+            <MessageCircle className="h-4 w-4" />
+          </MessageButton>
         )}
       </CardFooter>
     </Card>

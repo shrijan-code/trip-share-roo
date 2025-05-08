@@ -1,17 +1,18 @@
 
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Phone, Mail, User, MapPin, Calendar, Clock } from "lucide-react";
+import { Phone, Mail, User, MapPin, Calendar, Clock, Edit, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MessageThread from '@/components/messaging/MessageThread';
 import { useAuth } from '@/context/AuthContext';
+import MessageButton from '@/components/messaging/MessageButton';
 
 interface Profile {
   id: string;
@@ -157,15 +158,36 @@ const UserProfile = () => {
                     <h2 className="text-xl font-bold">{getFullName()}</h2>
                     <p className="text-gray-500 mb-4">Driver</p>
                     
-                    {!isCurrentUserProfile && (
+                    {isCurrentUserProfile ? (
+                      <Button 
+                        variant="outline" 
+                        className="w-full mb-2"
+                        asChild
+                      >
+                        <Link to="/edit-profile">
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit Profile
+                        </Link>
+                      </Button>
+                    ) : (
                       <div className="w-full space-y-2">
                         <Button 
                           onClick={handleContactClick} 
-                          className="w-full"
+                          className="w-full mb-2"
                         >
                           <Phone className="mr-2 h-4 w-4" />
                           Copy Phone Number
                         </Button>
+                        
+                        <MessageButton
+                          recipientId={id || ''}
+                          recipientName={getFullName()}
+                          className="w-full"
+                          variant="outline"
+                        >
+                          <MessageCircle className="mr-2 h-4 w-4" />
+                          Message
+                        </MessageButton>
                       </div>
                     )}
                   </div>
@@ -248,7 +270,7 @@ const UserProfile = () => {
                         <CardTitle className="text-xl">Messages</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <MessageThread recipientId={id} recipientName={getFullName()} />
+                        <MessageThread recipientId={id || ''} recipientName={getFullName()} />
                       </CardContent>
                     </Card>
                   </TabsContent>

@@ -27,6 +27,7 @@ import PrivacyPolicyPage from "./pages/PrivacyPolicy";
 import TermsOfServicePage from "./pages/TermsOfService";
 import RouteDetailPage from "./pages/routes/RouteDetailPage";
 import UserProfile from "./pages/UserProfile";
+import EditProfile from "./pages/EditProfile";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,11 @@ const App = () => (
             <Route path="/find-rides" element={<FindRides />} />
             <Route path="/trips/:id" element={<TripDetails />} />
             <Route path="/profile/:id" element={<UserProfile />} />
+            <Route path="/edit-profile" element={
+              <ProtectedRoute>
+                <EditProfile />
+              </ProtectedRoute>
+            } />
             <Route path="/offer-ride" element={
               <ProtectedRoute>
                 <OfferRide />

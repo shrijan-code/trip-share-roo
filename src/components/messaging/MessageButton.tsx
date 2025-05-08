@@ -19,6 +19,7 @@ interface MessageButtonProps {
   size?: "default" | "sm" | "lg" | "icon";
   className?: string;
   buttonText?: string;
+  children?: React.ReactNode;
 }
 
 const MessageButton: React.FC<MessageButtonProps> = ({
@@ -28,7 +29,8 @@ const MessageButton: React.FC<MessageButtonProps> = ({
   variant = "outline",
   size = "sm",
   className = "",
-  buttonText = "Message"
+  buttonText,
+  children
 }) => {
   const [open, setOpen] = useState(false);
 
@@ -36,8 +38,12 @@ const MessageButton: React.FC<MessageButtonProps> = ({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant={variant} size={size} className={className}>
-          <MessageCircle className="h-4 w-4 mr-2" />
-          {buttonText}
+          {children || (
+            <>
+              <MessageCircle className="h-4 w-4 mr-2" />
+              {buttonText || "Message"}
+            </>
+          )}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px] h-[550px] flex flex-col">

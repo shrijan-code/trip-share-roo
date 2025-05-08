@@ -5,7 +5,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/AuthContext';
-import { Send, Mail } from 'lucide-react';
+import { Send, Mail, Loader2 } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -38,68 +38,69 @@ const MessageThread: React.FC<MessageThreadProps> = ({ recipientId, recipientNam
     const fetchMessages = async () => {
       setLoading(true);
       
-      const { data, error } = await supabase
-        .from('messages')
-        .select('*')
-        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
-        .or(`sender_id.eq.${recipientId},receiver_id.eq.${recipientId}`)
-        .order('created_at', { ascending: true });
-      
-      if (error) {
-        console.error('Error fetching messages:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load messages. Please try again.',
-          variant: 'destructive',
-        });
-      } else {
-        // Filter to only include messages between these two users
-        const relevantMessages = data.filter(
-          msg => 
-            (msg.sender_id === user.id && msg.receiver_id === recipientId) || 
-            (msg.sender_id === recipientId && msg.receiver_id === user.id)
-        );
+      try {
+        const { data, error } = await supabase
+          .from('messages')
+          .select('*')
+          .or(`and(sender_id.eq.${user.id},receiver_id.eq.${recipientId}),and(sender_id.eq.${recipientId},receiver_id.eq.${user.id})`)
+          .order('created_at', { ascending: true });
         
-        setMessages(relevantMessages);
-        
-        // Mark unread received messages as read
-        const unreadMessageIds = relevantMessages
-          .filter(msg => msg.receiver_id === user.id && !msg.read)
-          .map(msg => msg.id);
-        
-        if (unreadMessageIds.length > 0) {
-          await supabase
-            .from('messages')
-            .update({ read: true })
-            .in('id', unreadMessageIds);
+        if (error) {
+          console.error('Error fetching messages:', error);
+          toast({
+            title: 'Error',
+            description: 'Failed to load messages. Please try again.',
+            variant: 'destructive',
+          });
+        } else {
+          setMessages(data || []);
+          
+          // Mark unread received messages as read
+          const unreadMessageIds = data
+            ?.filter(msg => msg.receiver_id === user.id && !msg.read)
+            .map(msg => msg.id) || [];
+          
+          if (unreadMessageIds.length > 0) {
+            await supabase
+              .from('messages')
+              .update({ read: true })
+              .in('id', unreadMessageIds);
+          }
         }
+      } catch (err) {
+        console.error('Error in fetching messages:', err);
+      } finally {
+        setLoading(false);
       }
-      
-      setLoading(false);
     };
 
     fetchMessages();
 
-    // Set up real-time subscription
+    // Set up real-time subscription for new messages
     const channel = supabase
-      .channel('message_changes')
+      .channel('messages_channel')
       .on(
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
           table: 'messages',
-          filter: `sender_id=eq.${recipientId},receiver_id=eq.${user.id}`
+          filter: `receiver_id=eq.${user.id}`
         },
-        (payload) => {
+        async (payload) => {
+          console.log('Received new message:', payload);
           const newMsg = payload.new as Message;
-          setMessages(current => [...current, newMsg]);
           
-          // Mark as read immediately
-          supabase
-            .from('messages')
-            .update({ read: true })
-            .eq('id', newMsg.id);
+          // Only add if it's from the current recipient
+          if (newMsg.sender_id === recipientId) {
+            setMessages(current => [...current, newMsg]);
+            
+            // Mark as read immediately
+            await supabase
+              .from('messages')
+              .update({ read: true })
+              .eq('id', newMsg.id);
+          }
         }
       )
       .subscribe();
@@ -117,7 +118,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ recipientId, recipientNam
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!newMessage.trim() || !user || sending) return;
+    if (!newMessage.trim() || !user || !recipientId || sending) return;
     
     setSending(true);
     
@@ -128,23 +129,31 @@ const MessageThread: React.FC<MessageThreadProps> = ({ recipientId, recipientNam
       trip_id: tripId || null,
     };
     
-    const { error } = await supabase
-      .from('messages')
-      .insert(messageData);
-    
-    if (error) {
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .insert([messageData])
+        .select();
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (data && data.length > 0) {
+        // Add the new message to the UI immediately
+        setMessages(prev => [...prev, data[0]]);
+        setNewMessage('');
+      }
+    } catch (error) {
       console.error('Error sending message:', error);
       toast({
         title: 'Error',
         description: 'Failed to send message. Please try again.',
         variant: 'destructive',
       });
-    } else {
-      setNewMessage('');
-      // The message will be added via the real-time subscription
+    } finally {
+      setSending(false);
     }
-    
-    setSending(false);
   };
 
   const formatDate = (dateString: string) => {
@@ -160,7 +169,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ recipientId, recipientNam
   if (loading) {
     return (
       <div className="flex justify-center items-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -215,7 +224,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({ recipientId, recipientNam
           }}
         />
         <Button type="submit" disabled={sending || !newMessage.trim()}>
-          <Send className="h-4 w-4" />
+          {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           <span className="ml-2 hidden sm:inline">Send</span>
         </Button>
       </form>
