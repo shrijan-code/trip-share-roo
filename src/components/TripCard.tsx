@@ -22,6 +22,7 @@ export interface TripProps {
     avatar: string;
     rating: number;
     trips: number;
+    phone?: string | null;
   };
 }
 
@@ -58,7 +59,7 @@ const TripCard: React.FC<TripProps> = ({ id, from, to, date, time, price, seats,
           </div>
 
           <div className="flex items-center justify-between py-3 border-t border-gray-100">
-            <div className="flex items-center gap-2">
+            <Link to={`/profile/${driver.id}`} className="flex items-center gap-2 hover:text-primary transition-colors">
               <Avatar className="h-8 w-8">
                 <AvatarImage src={driver.avatar} />
                 <AvatarFallback>{driver.name.charAt(0)}</AvatarFallback>
@@ -73,7 +74,7 @@ const TripCard: React.FC<TripProps> = ({ id, from, to, date, time, price, seats,
                   <span>{driver.trips} trips</span>
                 </div>
               </div>
-            </div>
+            </Link>
             <div className="flex items-center gap-1">
               <Users className="h-4 w-4 text-gray-500" />
               <span className="text-sm text-gray-600">{seats} seats left</span>

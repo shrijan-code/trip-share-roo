@@ -4,14 +4,38 @@ import { TripProps } from '@/components/TripCard';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar, Clock, MapPin, Users, MessageCircle, Shield } from "lucide-react";
+import { Calendar, Clock, MapPin, Users, MessageCircle, Shield, User, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
 
 interface TripInfoProps {
   trip: TripProps;
+  onContactDriver?: () => void;
+  onViewProfile?: () => void;
 }
 
-const TripInfo: React.FC<TripInfoProps> = ({ trip }) => {
+const TripInfo: React.FC<TripInfoProps> = ({ trip, onContactDriver, onViewProfile }) => {
+  const { toast } = useToast();
+  
+  const handleContactDriver = () => {
+    if (trip.driver.phone) {
+      navigator.clipboard.writeText(trip.driver.phone).then(() => {
+        toast({
+          title: "Phone number copied!",
+          description: `You can now call or text ${trip.driver.name} at ${trip.driver.phone}`,
+        });
+      });
+    } else if (onContactDriver) {
+      onContactDriver();
+    } else {
+      toast({
+        title: "Contact information unavailable",
+        description: "This driver hasn't provided contact information yet.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <Card>
       <CardHeader className="border-b">
@@ -85,11 +109,21 @@ const TripInfo: React.FC<TripInfoProps> = ({ trip }) => {
               </div>
             </div>
             <div className="mt-4">
-              <Button variant="outline" size="sm" className="mr-3">
-                <MessageCircle className="h-4 w-4 mr-2" />
-                Contact Driver
+              <Button variant="outline" size="sm" className="mr-3" onClick={handleContactDriver}>
+                {trip.driver.phone ? (
+                  <>
+                    <Phone className="h-4 w-4 mr-2" />
+                    Copy Phone Number
+                  </>
+                ) : (
+                  <>
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Contact Driver
+                  </>
+                )}
               </Button>
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" onClick={onViewProfile}>
+                <User className="h-4 w-4 mr-2" />
                 View Profile
               </Button>
             </div>

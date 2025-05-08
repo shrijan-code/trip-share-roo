@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import TripLoader from '@/components/trips/TripLoader';
@@ -23,8 +23,17 @@ interface Trip {
   driver_id: string;
 }
 
+interface Profile {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  avatar_url: string | null;
+  phone: string | null;
+}
+
 const TripDetails = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [trip, setTrip] = useState<TripProps | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -33,38 +42,67 @@ const TripDetails = () => {
       if (!id) return;
       
       try {
-        const { data, error } = await supabase
+        // Fetch trip data
+        const { data: tripData, error: tripError } = await supabase
           .from('trips')
           .select('*')
           .eq('id', id)
           .single();
 
-        if (error) {
-          throw error;
+        if (tripError) {
+          throw tripError;
         }
 
-        if (data) {
+        if (tripData) {
+          // Fetch the driver's profile information
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', tripData.driver_id)
+            .single();
+
+          if (profileError) {
+            console.error('Error fetching driver profile:', profileError);
+          }
+
           // Format the date and time from the departure_date
-          const departureDate = new Date(data.departure_date);
+          const departureDate = new Date(tripData.departure_date);
           const formattedDate = departureDate.toLocaleDateString();
           const formattedTime = departureDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
           
+          // Generate driver name from profile or use placeholder
+          let driverName = "Trip Driver";
+          if (profileData && (profileData.first_name || profileData.last_name)) {
+            driverName = `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim();
+          }
+
+          // Count driver's trips
+          const { count: tripsCount, error: countError } = await supabase
+            .from('trips')
+            .select('*', { count: 'exact', head: true })
+            .eq('driver_id', tripData.driver_id);
+
+          if (countError) {
+            console.error('Error counting driver trips:', countError);
+          }
+
           // Convert to expected format for TripInfo component
           const formattedTrip: TripProps = {
-            id: data.id,
-            from: data.origin,
-            to: data.destination,
+            id: tripData.id,
+            from: tripData.origin,
+            to: tripData.destination,
             date: formattedDate,
             time: formattedTime,
-            price: Number(data.price),
-            seats: data.seats_available,
-            isPublic: data.is_public,
+            price: Number(tripData.price),
+            seats: tripData.seats_available,
+            isPublic: tripData.is_public,
             driver: {
-              id: data.driver_id,
-              name: "Trip Driver", // Placeholder - would fetch from profiles table
-              avatar: "", // Placeholder
-              rating: 4.8, // Placeholder
-              trips: 42 // Placeholder
+              id: tripData.driver_id,
+              name: driverName,
+              avatar: profileData?.avatar_url || "",
+              rating: 4.8, // Placeholder until we implement ratings
+              trips: tripsCount || 0,
+              phone: profileData?.phone || null,
             }
           };
           
@@ -99,7 +137,11 @@ const TripDetails = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Main Trip Information */}
             <div className="lg:col-span-2">
-              <TripInfo trip={trip} />
+              <TripInfo 
+                trip={trip} 
+                onContactDriver={() => navigate(`/profile/${trip.driver.id}`)}
+                onViewProfile={() => navigate(`/profile/${trip.driver.id}`)}
+              />
             </div>
             
             {/* Booking Card */}
