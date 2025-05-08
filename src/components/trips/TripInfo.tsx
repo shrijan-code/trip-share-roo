@@ -7,6 +7,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, Clock, MapPin, Users, MessageCircle, Shield, User, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
+import MessageButton from '../messaging/MessageButton';
+import { useAuth } from '@/context/AuthContext';
 
 interface TripInfoProps {
   trip: TripProps;
@@ -16,6 +18,7 @@ interface TripInfoProps {
 
 const TripInfo: React.FC<TripInfoProps> = ({ trip, onContactDriver, onViewProfile }) => {
   const { toast } = useToast();
+  const { user } = useAuth();
   
   const handleContactDriver = () => {
     if (trip.driver.phone) {
@@ -35,6 +38,8 @@ const TripInfo: React.FC<TripInfoProps> = ({ trip, onContactDriver, onViewProfil
       });
     }
   };
+
+  const showMessageButton = !!user && user.id !== trip.driver.id;
 
   return (
     <Card>
@@ -108,8 +113,8 @@ const TripInfo: React.FC<TripInfoProps> = ({ trip, onContactDriver, onViewProfil
                 </div>
               </div>
             </div>
-            <div className="mt-4">
-              <Button variant="outline" size="sm" className="mr-3" onClick={handleContactDriver}>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" onClick={handleContactDriver}>
                 {trip.driver.phone ? (
                   <>
                     <Phone className="h-4 w-4 mr-2" />
@@ -117,11 +122,20 @@ const TripInfo: React.FC<TripInfoProps> = ({ trip, onContactDriver, onViewProfil
                   </>
                 ) : (
                   <>
-                    <MessageCircle className="h-4 w-4 mr-2" />
+                    <Phone className="h-4 w-4 mr-2" />
                     Contact Driver
                   </>
                 )}
               </Button>
+              
+              {showMessageButton && (
+                <MessageButton 
+                  recipientId={trip.driver.id}
+                  recipientName={trip.driver.name}
+                  tripId={trip.id}
+                />
+              )}
+              
               <Button variant="ghost" size="sm" onClick={onViewProfile}>
                 <User className="h-4 w-4 mr-2" />
                 View Profile

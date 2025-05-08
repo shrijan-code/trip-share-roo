@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, MapPin, User, Users, Globe } from "lucide-react";
+import { useAuth } from '@/context/AuthContext';
+import MessageButton from './messaging/MessageButton';
 
 export interface TripProps {
   id: string;
@@ -27,6 +29,9 @@ export interface TripProps {
 }
 
 const TripCard: React.FC<TripProps> = ({ id, from, to, date, time, price, seats, isPublic = true, driver }) => {
+  const { user } = useAuth();
+  const isCurrentUserDriver = user && user.id === driver.id;
+
   return (
     <Card className="trip-card h-full">
       <CardContent className="p-0">
@@ -82,10 +87,19 @@ const TripCard: React.FC<TripProps> = ({ id, from, to, date, time, price, seats,
           </div>
         </div>
       </CardContent>
-      <CardFooter className="pt-2 px-4 pb-4">
-        <Button asChild className="w-full">
+      <CardFooter className="pt-2 px-4 pb-4 flex justify-between">
+        <Button asChild variant="default" className="flex-1 mr-2">
           <Link to={`/trips/${id}`}>View Details</Link>
         </Button>
+        
+        {user && !isCurrentUserDriver && (
+          <MessageButton 
+            recipientId={driver.id} 
+            recipientName={driver.name} 
+            tripId={id} 
+            buttonText=""
+          />
+        )}
       </CardFooter>
     </Card>
   );

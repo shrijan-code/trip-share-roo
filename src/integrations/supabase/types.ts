@@ -71,6 +71,50 @@ export type Database = {
         }
         Relationships: []
       }
+      messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          deleted_by_receiver: boolean | null
+          deleted_by_sender: boolean | null
+          id: string
+          read: boolean | null
+          receiver_id: string
+          sender_id: string
+          trip_id: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          deleted_by_receiver?: boolean | null
+          deleted_by_sender?: boolean | null
+          id?: string
+          read?: boolean | null
+          receiver_id: string
+          sender_id: string
+          trip_id?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          deleted_by_receiver?: boolean | null
+          deleted_by_sender?: boolean | null
+          id?: string
+          read?: boolean | null
+          receiver_id?: string
+          sender_id?: string
+          trip_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null

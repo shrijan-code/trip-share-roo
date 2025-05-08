@@ -9,6 +9,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Phone, Mail, User, MapPin, Calendar, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import MessageThread from '@/components/messaging/MessageThread';
+import { useAuth } from '@/context/AuthContext';
 
 interface Profile {
   id: string;
@@ -33,6 +36,8 @@ const UserProfile = () => {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { user } = useAuth();
+  const isCurrentUserProfile = user && user.id === id;
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -152,75 +157,103 @@ const UserProfile = () => {
                     <h2 className="text-xl font-bold">{getFullName()}</h2>
                     <p className="text-gray-500 mb-4">Driver</p>
                     
-                    <Button 
-                      onClick={handleContactClick} 
-                      className="w-full mb-2"
-                    >
-                      <Phone className="mr-2 h-4 w-4" />
-                      Contact
-                    </Button>
+                    {!isCurrentUserProfile && (
+                      <div className="w-full space-y-2">
+                        <Button 
+                          onClick={handleContactClick} 
+                          className="w-full"
+                        >
+                          <Phone className="mr-2 h-4 w-4" />
+                          Copy Phone Number
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* User Trips */}
+            {/* User Tabs: Trips and Messages */}
             <div className="md:col-span-2">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-xl">Upcoming Trips</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {trips.length > 0 ? (
-                    <div className="space-y-4">
-                      {trips.map((trip) => {
-                        const departureDate = new Date(trip.departure_date);
-                        const formattedDate = departureDate.toLocaleDateString();
-                        const formattedTime = departureDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                        
-                        return (
-                          <div key={trip.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                            <div className="flex justify-between items-start">
-                              <h3 className="font-semibold text-lg">
-                                {trip.origin} to {trip.destination}
-                              </h3>
-                              <span className="font-bold text-primary">${trip.price}</span>
-                            </div>
-                            <div className="grid grid-cols-2 gap-2 mt-2">
-                              <div className="flex items-center">
-                                <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-                                <span className="text-sm">{formattedDate}</span>
-                              </div>
-                              <div className="flex items-center">
-                                <Clock className="h-4 w-4 mr-2 text-gray-500" />
-                                <span className="text-sm">{formattedTime}</span>
-                              </div>
-                              <div className="flex items-center">
-                                <MapPin className="h-4 w-4 mr-2 text-gray-500" />
-                                <span className="text-sm">From: {trip.origin}</span>
-                              </div>
-                              <div className="flex items-center">
-                                <MapPin className="h-4 w-4 mr-2 text-gray-500" />
-                                <span className="text-sm">To: {trip.destination}</span>
-                              </div>
-                            </div>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="mt-2"
-                              onClick={() => window.location.href = `/trips/${trip.id}`}
-                            >
-                              View details
-                            </Button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <p className="text-gray-500 text-center py-8">This user has no upcoming trips.</p>
+              <Tabs defaultValue="trips">
+                <TabsList className="w-full mb-4">
+                  <TabsTrigger value="trips" className="flex-1">Upcoming Trips</TabsTrigger>
+                  {user && !isCurrentUserProfile && (
+                    <TabsTrigger value="messages" className="flex-1">Messages</TabsTrigger>
                   )}
-                </CardContent>
-              </Card>
+                </TabsList>
+                
+                <TabsContent value="trips">
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-xl">Upcoming Trips</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {trips.length > 0 ? (
+                        <div className="space-y-4">
+                          {trips.map((trip) => {
+                            const departureDate = new Date(trip.departure_date);
+                            const formattedDate = departureDate.toLocaleDateString();
+                            const formattedTime = departureDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                            
+                            return (
+                              <div key={trip.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                                <div className="flex justify-between items-start">
+                                  <h3 className="font-semibold text-lg">
+                                    {trip.origin} to {trip.destination}
+                                  </h3>
+                                  <span className="font-bold text-primary">${trip.price}</span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 mt-2">
+                                  <div className="flex items-center">
+                                    <Calendar className="h-4 w-4 mr-2 text-gray-500" />
+                                    <span className="text-sm">{formattedDate}</span>
+                                  </div>
+                                  <div className="flex items-center">
+                                    <Clock className="h-4 w-4 mr-2 text-gray-500" />
+                                    <span className="text-sm">{formattedTime}</span>
+                                  </div>
+                                  <div className="flex items-center">
+                                    <MapPin className="h-4 w-4 mr-2 text-gray-500" />
+                                    <span className="text-sm">From: {trip.origin}</span>
+                                  </div>
+                                  <div className="flex items-center">
+                                    <MapPin className="h-4 w-4 mr-2 text-gray-500" />
+                                    <span className="text-sm">To: {trip.destination}</span>
+                                  </div>
+                                </div>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="mt-2"
+                                  onClick={() => window.location.href = `/trips/${trip.id}`}
+                                >
+                                  View details
+                                </Button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-gray-500 text-center py-8">This user has no upcoming trips.</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                
+                {user && !isCurrentUserProfile && (
+                  <TabsContent value="messages">
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-xl">Messages</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <MessageThread recipientId={id} recipientName={getFullName()} />
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                )}
+              </Tabs>
             </div>
           </div>
         </div>
