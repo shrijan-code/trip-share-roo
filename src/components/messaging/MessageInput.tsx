@@ -1,55 +1,51 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Send, Loader2 } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { SendHorizontal } from "lucide-react";
 
 interface MessageInputProps {
   onSendMessage: (content: string) => Promise<void>;
   recipientName: string;
-  disabled?: boolean;
 }
 
-const MessageInput: React.FC<MessageInputProps> = ({ 
-  onSendMessage, 
-  recipientName, 
-  disabled = false 
-}) => {
+const MessageInput: React.FC<MessageInputProps> = ({ onSendMessage, recipientName }) => {
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!message.trim() || sending) return;
+    if (!message.trim()) return;
     
-    setSending(true);
     try {
+      setSending(true);
       await onSendMessage(message.trim());
       setMessage('');
+    } catch (err) {
+      console.error('Error sending message:', err);
     } finally {
       setSending(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex space-x-2">
+    <form onSubmit={handleSubmit} className="relative">
       <Textarea
+        placeholder={`Send a message to ${recipientName}...`}
         value={message}
         onChange={(e) => setMessage(e.target.value)}
-        placeholder={`Message ${recipientName}...`}
-        className="flex-grow min-h-[60px] resize-none"
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            handleSubmit(e);
-          }
-        }}
-        disabled={disabled}
+        className="min-h-24 resize-none pr-12"
+        disabled={sending}
       />
-      <Button type="submit" disabled={sending || !message.trim() || disabled}>
-        {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-        <span className="ml-2 hidden sm:inline">Send</span>
+      <Button 
+        type="submit" 
+        size="sm" 
+        className="absolute bottom-2 right-2" 
+        disabled={!message.trim() || sending}
+      >
+        <SendHorizontal className="h-4 w-4" />
+        <span className="sr-only">Send</span>
       </Button>
     </form>
   );

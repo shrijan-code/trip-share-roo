@@ -108,7 +108,7 @@ export const useMessages = (recipientId: string, tripId?: string) => {
     };
   }, [user, recipientId, toast]);
 
-  const sendMessage = async (content: string) => {
+  const sendMessage = async (content: string): Promise<void> => {
     if (!content.trim() || !user || !recipientId) {
       return;
     }
@@ -133,7 +133,6 @@ export const useMessages = (recipientId: string, tripId?: string) => {
       if (data && data.length > 0) {
         // Add the new message to the UI immediately
         setMessages(prev => [...prev, data[0]]);
-        return true;
       }
     } catch (error) {
       console.error('Error sending message:', error);
@@ -142,7 +141,7 @@ export const useMessages = (recipientId: string, tripId?: string) => {
         description: 'Failed to send message. Please try again.',
         variant: 'destructive',
       });
-      return false;
+      throw error; // Re-throw to allow component to handle it
     }
   };
 

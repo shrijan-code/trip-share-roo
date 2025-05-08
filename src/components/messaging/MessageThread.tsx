@@ -18,6 +18,11 @@ const MessageThread: React.FC<MessageThreadProps> = ({
 }) => {
   const { messages, loading, sendMessage, formatDate } = useMessages(recipientId, tripId);
 
+  const handleSendMessage = async (content: string) => {
+    await sendMessage(content);
+    // We don't need to return any value, fixing the TypeScript error
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center p-8">
@@ -33,7 +38,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
       </div>
       
       <MessageInput 
-        onSendMessage={sendMessage}
+        onSendMessage={handleSendMessage}
         recipientName={recipientName}
       />
     </div>
