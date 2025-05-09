@@ -37,11 +37,18 @@ export const useMessages = (recipientId: string, tripId?: string) => {
       setLoading(true);
       
       try {
-        const { data, error } = await supabase
+        let query = supabase
           .from('messages')
           .select('*')
           .or(`and(sender_id.eq.${user.id},receiver_id.eq.${recipientId}),and(sender_id.eq.${recipientId},receiver_id.eq.${user.id})`)
           .order('created_at', { ascending: true });
+        
+        // Filter by trip_id if provided
+        if (tripId) {
+          query = query.eq('trip_id', tripId);
+        }
+        
+        const { data, error } = await query;
         
         if (error) {
           console.error('Error fetching messages:', error);
@@ -89,8 +96,8 @@ export const useMessages = (recipientId: string, tripId?: string) => {
           console.log('Received new message:', payload);
           const newMsg = payload.new as Message;
           
-          // Only add if it's from the current recipient
-          if (newMsg.sender_id === recipientId) {
+          // Only add if it's from the current recipient and matches trip_id filter (if any)
+          if (newMsg.sender_id === recipientId && (!tripId || newMsg.trip_id === tripId)) {
             setMessages(current => [...current, newMsg]);
             
             // Mark as read immediately
@@ -106,7 +113,7 @@ export const useMessages = (recipientId: string, tripId?: string) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, recipientId, toast]);
+  }, [user, recipientId, tripId, toast]);
 
   const sendMessage = async (content: string): Promise<void> => {
     if (!content.trim() || !user || !recipientId) {

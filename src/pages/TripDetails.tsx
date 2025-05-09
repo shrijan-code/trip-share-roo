@@ -150,6 +150,7 @@ const TripDetails = () => {
                 id={trip.id} 
                 price={trip.price} 
                 seats={trip.seats} 
+                driverId={trip.driver.id}
               />
             </div>
           </div>

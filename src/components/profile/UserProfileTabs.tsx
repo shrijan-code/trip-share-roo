@@ -3,6 +3,7 @@ import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import UserTripsList from './UserTripsList';
 import UserMessageTab from './UserMessageTab';
+import NotificationsTab from '../notifications/NotificationsTab';
 
 interface Trip {
   id: string;
@@ -32,6 +33,9 @@ const UserProfileTabs: React.FC<UserProfileTabsProps> = ({
     <Tabs defaultValue="trips">
       <TabsList className="w-full mb-4">
         <TabsTrigger value="trips" className="flex-1">Upcoming Trips</TabsTrigger>
+        {isCurrentUserProfile && (
+          <TabsTrigger value="notifications" className="flex-1">Notifications</TabsTrigger>
+        )}
         {currentUserId && !isCurrentUserProfile && (
           <TabsTrigger value="messages" className="flex-1">Messages</TabsTrigger>
         )}
@@ -40,6 +44,12 @@ const UserProfileTabs: React.FC<UserProfileTabsProps> = ({
       <TabsContent value="trips">
         <UserTripsList trips={trips} />
       </TabsContent>
+      
+      {isCurrentUserProfile && (
+        <TabsContent value="notifications">
+          <NotificationsTab />
+        </TabsContent>
+      )}
       
       {currentUserId && !isCurrentUserProfile && (
         <TabsContent value="messages">

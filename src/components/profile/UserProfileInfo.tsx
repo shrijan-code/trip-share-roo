@@ -63,7 +63,7 @@ const UserProfileInfo: React.FC<UserProfileInfoProps> = ({
             </AvatarFallback>
           </Avatar>
           <h2 className="text-xl font-bold">{getFullName()}</h2>
-          <p className="text-gray-500 mb-4">Driver</p>
+          <p className="text-gray-500 mb-4">User</p>
           
           {isCurrentUserProfile ? (
             <Button 

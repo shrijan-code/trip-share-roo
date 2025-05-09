@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -65,7 +64,7 @@ const MyTrips = () => {
     fetchTrips();
   }, [user, toast]);
 
-  const handleBookingStatusChange = async (bookingId: string, newStatus: string) => {
+  const handleBookingStatusChange = async (bookingId: string, newStatus: string, passengerId: string, tripData: any) => {
     try {
       const { error } = await supabase
         .from('bookings')
@@ -83,6 +82,16 @@ const MyTrips = () => {
           ) || null
         }))
       );
+
+      // Send notification to passenger
+      await supabase
+        .from('notifications')
+        .insert({
+          user_id: passengerId,
+          message: `Your booking from ${tripData.origin} to ${tripData.destination} has been ${newStatus}.`,
+          related_trip_id: tripData.id,
+          related_booking_id: bookingId
+        });
 
       toast({
         title: "Status updated",
@@ -211,14 +220,14 @@ const MyTrips = () => {
                                           <Button 
                                             size="sm" 
                                             variant="default" 
-                                            onClick={() => handleBookingStatusChange(booking.id, 'confirmed')}
+                                            onClick={() => handleBookingStatusChange(booking.id, 'confirmed', booking.passenger_id, trip)}
                                           >
                                             Confirm
                                           </Button>
                                           <Button 
                                             size="sm" 
                                             variant="outline" 
-                                            onClick={() => handleBookingStatusChange(booking.id, 'cancelled')}
+                                            onClick={() => handleBookingStatusChange(booking.id, 'cancelled', booking.passenger_id, trip)}
                                           >
                                             Decline
                                           </Button>

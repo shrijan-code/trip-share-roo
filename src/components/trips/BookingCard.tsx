@@ -12,13 +12,17 @@ interface BookingCardProps {
   id: string;
   price: number;
   seats: number;
+  driverId: string;
 }
 
-const BookingCard: React.FC<BookingCardProps> = ({ id, price, seats }) => {
+const BookingCard: React.FC<BookingCardProps> = ({ id, price, seats, driverId }) => {
   const [isBooking, setIsBooking] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Check if current user is the driver
+  const isCurrentUserDriver = user && user.id === driverId;
   
   const handleBookTrip = async () => {
     if (!user) {
@@ -28,6 +32,15 @@ const BookingCard: React.FC<BookingCardProps> = ({ id, price, seats }) => {
         variant: "destructive"
       });
       navigate('/login');
+      return;
+    }
+
+    if (isCurrentUserDriver) {
+      toast({
+        title: "You cannot book your own trip",
+        description: "Drivers cannot book trips they've listed.",
+        variant: "destructive"
+      });
       return;
     }
 
@@ -56,14 +69,15 @@ const BookingCard: React.FC<BookingCardProps> = ({ id, price, seats }) => {
       }
 
       // Insert the booking
-      const { error } = await supabase
+      const { data: bookingData, error } = await supabase
         .from('bookings')
         .insert({
           trip_id: id,
           passenger_id: user.id,
           seats: 1, // Default to 1 seat, could be made variable
           status: 'pending'
-        });
+        })
+        .select();
 
       if (error) throw error;
 
@@ -74,6 +88,18 @@ const BookingCard: React.FC<BookingCardProps> = ({ id, price, seats }) => {
         .eq('id', id);
 
       if (updateError) throw updateError;
+
+      // Create notification for the driver
+      if (bookingData && bookingData.length > 0) {
+        await supabase
+          .from('notifications')
+          .insert({
+            user_id: driverId,
+            message: `New booking request for your trip from ${user.email}`,
+            related_trip_id: id,
+            related_booking_id: bookingData[0].id
+          });
+      }
 
       toast({
         title: "Booking successful!",
@@ -127,19 +153,25 @@ const BookingCard: React.FC<BookingCardProps> = ({ id, price, seats }) => {
             className="w-full" 
             size="lg" 
             onClick={handleBookTrip}
-            disabled={isBooking || seats <= 0}
+            disabled={isBooking || seats <= 0 || isCurrentUserDriver}
           >
-            {isBooking ? "Processing..." : seats <= 0 ? "Sold Out" : "Book This Trip"}
+            {isBooking ? "Processing..." : 
+             seats <= 0 ? "Sold Out" : 
+             isCurrentUserDriver ? "Your Trip" : "Book This Trip"}
           </Button>
           
-          <div className="text-sm text-gray-500 text-center">
-            You won't be charged yet
-          </div>
-          
-          <div className="flex items-center justify-center text-sm text-gray-600">
-            <Shield className="h-4 w-4 mr-2 text-green-600" />
-            Secure payment processing
-          </div>
+          {!isCurrentUserDriver && (
+            <>
+              <div className="text-sm text-gray-500 text-center">
+                You won't be charged yet
+              </div>
+              
+              <div className="flex items-center justify-center text-sm text-gray-600">
+                <Shield className="h-4 w-4 mr-2 text-green-600" />
+                Secure payment processing
+              </div>
+            </>
+          )}
         </div>
       </CardContent>
     </Card>

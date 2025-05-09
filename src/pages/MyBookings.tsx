@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -10,6 +9,7 @@ import { Calendar, Clock, MapPin, CheckCircle, XCircle, AlertCircle } from "luci
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+import CompletePaymentButton from '@/components/trips/CompletePaymentButton';
 
 interface Booking {
   id: string;
@@ -179,6 +179,20 @@ const MyBookings = () => {
                           <Button asChild className="w-full mb-2">
                             <Link to={`/trips/${booking.trip_id}`}>View Trip</Link>
                           </Button>
+                          {booking.status === 'confirmed' && (
+                            <CompletePaymentButton 
+                              bookingId={booking.id}
+                              amount={booking.trip.price * booking.seats}
+                              tripOrigin={booking.trip.origin}
+                              tripDestination={booking.trip.destination}
+                              onSuccess={() => {
+                                toast({
+                                  title: "Trip Completed",
+                                  description: "Thank you for your payment. Your trip has been completed.",
+                                });
+                              }}
+                            />
+                          )}
                           {booking.status === 'pending' && (
                             <Button variant="outline" className="w-full">
                               Cancel Booking
