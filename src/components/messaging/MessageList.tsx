@@ -16,9 +16,10 @@ interface Message {
 interface MessageListProps {
   messages: Message[];
   formatDate: (dateString: string) => string;
+  onDeleteMessage: (messageId: string) => Promise<void>;
 }
 
-const MessageList: React.FC<MessageListProps> = ({ messages, formatDate }) => {
+const MessageList: React.FC<MessageListProps> = ({ messages, formatDate, onDeleteMessage }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -38,7 +39,12 @@ const MessageList: React.FC<MessageListProps> = ({ messages, formatDate }) => {
   return (
     <>
       {messages.map((msg) => (
-        <MessageItem key={msg.id} message={msg} formatDate={formatDate} />
+        <MessageItem 
+          key={msg.id} 
+          message={msg} 
+          formatDate={formatDate} 
+          onDeleteMessage={onDeleteMessage}
+        />
       ))}
       <div ref={messagesEndRef} />
     </>

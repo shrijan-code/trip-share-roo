@@ -16,7 +16,7 @@ const MessageThread: React.FC<MessageThreadProps> = ({
   recipientName, 
   tripId 
 }) => {
-  const { messages, loading, sendMessage, formatDate } = useMessages(recipientId, tripId);
+  const { messages, loading, sendMessage, deleteMessage, formatDate } = useMessages(recipientId, tripId);
 
   const handleSendMessage = async (content: string) => {
     await sendMessage(content);
@@ -34,7 +34,11 @@ const MessageThread: React.FC<MessageThreadProps> = ({
   return (
     <div className="flex flex-col h-full">
       <div className="flex-grow overflow-y-auto mb-4 max-h-[400px] space-y-3">
-        <MessageList messages={messages} formatDate={formatDate} />
+        <MessageList 
+          messages={messages} 
+          formatDate={formatDate} 
+          onDeleteMessage={deleteMessage}
+        />
       </div>
       
       <MessageInput 

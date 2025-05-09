@@ -28,6 +28,8 @@ import TermsOfServicePage from "./pages/TermsOfService";
 import RouteDetailPage from "./pages/routes/RouteDetailPage";
 import UserProfile from "./pages/UserProfile";
 import EditProfile from "./pages/EditProfile";
+import Notifications from "./pages/Notifications";
+import Messages from "./pages/Messages";
 
 const queryClient = new QueryClient();
 
@@ -66,6 +68,16 @@ const App = () => (
             <Route path="/my-trips" element={
               <ProtectedRoute>
                 <MyTrips />
+              </ProtectedRoute>
+            } />
+            <Route path="/notifications" element={
+              <ProtectedRoute>
+                <Notifications />
+              </ProtectedRoute>
+            } />
+            <Route path="/messages" element={
+              <ProtectedRoute>
+                <Messages />
               </ProtectedRoute>
             } />
             <Route path="/how-it-works" element={<HowItWorks />} />

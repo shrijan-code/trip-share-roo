@@ -12,6 +12,8 @@ interface Message {
   created_at: string;
   read: boolean;
   trip_id: string | null;
+  deleted_by_sender: boolean;
+  deleted_by_receiver: boolean;
 }
 
 export const useMessages = (recipientId: string, tripId?: string) => {
@@ -58,10 +60,17 @@ export const useMessages = (recipientId: string, tripId?: string) => {
             variant: 'destructive',
           });
         } else {
-          setMessages(data || []);
+          // Filter out messages that have been deleted by the current user
+          const filteredMessages = data?.filter(msg => {
+            if (msg.sender_id === user.id && msg.deleted_by_sender) return false;
+            if (msg.receiver_id === user.id && msg.deleted_by_receiver) return false;
+            return true;
+          }) || [];
+
+          setMessages(filteredMessages);
           
           // Mark unread received messages as read
-          const unreadMessageIds = data
+          const unreadMessageIds = filteredMessages
             ?.filter(msg => msg.receiver_id === user.id && !msg.read)
             .map(msg => msg.id) || [];
           
@@ -108,6 +117,38 @@ export const useMessages = (recipientId: string, tripId?: string) => {
           }
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages'
+        },
+        (payload) => {
+          const updatedMsg = payload.new as Message;
+          
+          // Update the message in the state or remove it if it's been deleted by the current user
+          setMessages(current => 
+            current.map(msg => {
+              if (msg.id !== updatedMsg.id) return msg;
+              
+              // Check if the message should be filtered out
+              if (
+                (updatedMsg.sender_id === user.id && updatedMsg.deleted_by_sender) || 
+                (updatedMsg.receiver_id === user.id && updatedMsg.deleted_by_receiver)
+              ) {
+                return msg; // Will be filtered out in the next step
+              }
+              
+              return updatedMsg;
+            }).filter(msg => {
+              if (msg.sender_id === user.id && msg.deleted_by_sender) return false;
+              if (msg.receiver_id === user.id && msg.deleted_by_receiver) return false;
+              return true;
+            })
+          );
+        }
+      )
       .subscribe();
 
     return () => {
@@ -125,6 +166,8 @@ export const useMessages = (recipientId: string, tripId?: string) => {
       receiver_id: recipientId,
       content: content,
       trip_id: tripId || null,
+      deleted_by_sender: false,
+      deleted_by_receiver: false,
     };
     
     try {
@@ -152,10 +195,51 @@ export const useMessages = (recipientId: string, tripId?: string) => {
     }
   };
 
+  const deleteMessage = async (messageId: string): Promise<void> => {
+    try {
+      // Find the message to check if sender or receiver
+      const message = messages.find(m => m.id === messageId);
+      if (!message) return;
+
+      const updateField = message.sender_id === user?.id ? 'deleted_by_sender' : 'deleted_by_receiver';
+      
+      const { error } = await supabase
+        .from('messages')
+        .update({ [updateField]: true })
+        .eq('id', messageId);
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Update local state - filter out the deleted message
+      setMessages(current => 
+        current.filter(msg => {
+          if (msg.id !== messageId) return true;
+          if (msg.sender_id === user?.id) return !msg.deleted_by_sender;
+          if (msg.receiver_id === user?.id) return !msg.deleted_by_receiver;
+          return true;
+        })
+      );
+      
+      toast({
+        description: 'Message deleted',
+      });
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete message. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return { 
     messages, 
     loading, 
-    sendMessage, 
+    sendMessage,
+    deleteMessage, 
     formatDate 
   };
 };

@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User, Loader2 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
@@ -99,21 +98,23 @@ const EditProfile = () => {
     try {
       // Create a unique file path for the avatar
       const fileExt = avatar.name.split('.').pop();
-      const filePath = `avatars/${user.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const fileName = `${user.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
 
       // Upload the file to Supabase storage
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError, data } = await supabase.storage
         .from('avatars')
         .upload(filePath, avatar);
 
       if (uploadError) throw uploadError;
 
       // Get the public URL
-      const { data } = supabase.storage
+      const { data: publicUrlData } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
 
-      return data.publicUrl;
+      console.log('Avatar uploaded successfully, URL:', publicUrlData.publicUrl);
+      return publicUrlData.publicUrl;
     } catch (error) {
       console.error('Error uploading avatar:', error);
       toast({
@@ -136,7 +137,10 @@ const EditProfile = () => {
       let newAvatarUrl = formData.avatar_url;
       if (avatar) {
         const uploadedUrl = await uploadAvatar();
-        if (uploadedUrl) newAvatarUrl = uploadedUrl;
+        if (uploadedUrl) {
+          newAvatarUrl = uploadedUrl;
+          console.log('New avatar URL:', newAvatarUrl);
+        }
       }
       
       // Update profile
@@ -147,6 +151,7 @@ const EditProfile = () => {
           last_name: formData.last_name,
           phone: formData.phone,
           avatar_url: newAvatarUrl,
+          updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
       
