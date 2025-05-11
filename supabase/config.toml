@@ -1,1 +1,33 @@
+
 project_id = "zdpcldbrinzghstnfjga"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+
+[db]
+port = 54322
+
+[db.pooler]
+enabled = false
+port = 54329
+pool_mode = "transaction"
+default_pool_size = 15
+max_client_conn = 100
+
+[realtime]
+enabled = true
+
+[studio]
+enabled = true
+port = 54323
+api_url = "http://localhost"
+
+[[functions]]
+name = "send-notification-email"
+verify_jwt = false
+
+[[functions]]
+name = "notification-listener"
+verify_jwt = false

@@ -83,6 +83,18 @@ const Navbar: React.FC = () => {
             fetchNotifications();
           }
         )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'notifications',
+            filter: `user_id=eq.${user.id}`
+          },
+          () => {
+            fetchNotifications();
+          }
+        )
         .subscribe();
 
       return () => {
@@ -101,6 +113,19 @@ const Navbar: React.FC = () => {
       return `${userProfile.first_name || ''} ${userProfile.last_name || ''}`.trim();
     }
     return user?.email?.split('@')[0] || 'User';
+  };
+
+  const getInitials = () => {
+    if (userProfile?.first_name && userProfile?.last_name) {
+      return `${userProfile.first_name[0]}${userProfile.last_name[0]}`.toUpperCase();
+    }
+    if (userProfile?.first_name) {
+      return userProfile.first_name[0].toUpperCase();
+    }
+    if (user?.email) {
+      return user.email[0].toUpperCase();
+    }
+    return 'U';
   };
 
   return (
@@ -152,12 +177,12 @@ const Navbar: React.FC = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="flex items-center gap-2">
                     <Avatar className="h-6 w-6">
-                      <AvatarImage src={userProfile?.avatar_url || undefined} />
+                      <AvatarImage src={userProfile?.avatar_url || undefined} alt={getUserName()} />
                       <AvatarFallback>
-                        <User size={16} />
+                        {getInitials()}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="max-w-[100px] truncate">{getUserName()}</span>
+                    <span className="max-w-[120px] truncate">{getUserName()}</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -166,7 +191,10 @@ const Navbar: React.FC = () => {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link to={`/profile/${user.id}`}>Profile</Link>
+                    <Link to={`/profile/${user.id}`}>My Profile</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/edit-profile">Edit Profile</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link to="/my-trips">My Trips</Link>
@@ -196,7 +224,7 @@ const Navbar: React.FC = () => {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="lg:hidden absolute top-16 left-0 right-0 bg-white border-b shadow-lg">
+          <div className="lg:hidden absolute top-16 left-0 right-0 bg-white border-b shadow-lg z-50">
             <div className="flex flex-col space-y-4 p-4">
               <Link to="/find-rides" className="text-gray-600 hover:text-primary py-2" onClick={() => setIsMenuOpen(false)}>
                 Find Rides
@@ -213,9 +241,9 @@ const Navbar: React.FC = () => {
                   <div className="border-t pt-2">
                     <div className="flex items-center gap-2 mb-4">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={userProfile?.avatar_url || undefined} />
+                        <AvatarImage src={userProfile?.avatar_url || undefined} alt={getUserName()} />
                         <AvatarFallback>
-                          <User className="h-4 w-4" />
+                          {getInitials()}
                         </AvatarFallback>
                       </Avatar>
                       <div>
@@ -243,7 +271,8 @@ const Navbar: React.FC = () => {
                         </Button>
                       </Link>
                     </div>
-                    <Link to={`/profile/${user.id}`} className="block py-2" onClick={() => setIsMenuOpen(false)}>Profile</Link>
+                    <Link to={`/profile/${user.id}`} className="block py-2" onClick={() => setIsMenuOpen(false)}>My Profile</Link>
+                    <Link to="/edit-profile" className="block py-2" onClick={() => setIsMenuOpen(false)}>Edit Profile</Link>
                     <Link to="/my-trips" className="block py-2" onClick={() => setIsMenuOpen(false)}>My Trips</Link>
                     <Link to="/my-bookings" className="block py-2" onClick={() => setIsMenuOpen(false)}>My Bookings</Link>
                     <Button variant="outline" className="w-full mt-2 text-red-500" onClick={() => {

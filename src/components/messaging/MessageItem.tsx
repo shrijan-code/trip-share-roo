@@ -55,7 +55,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, formatDate, onDelete
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="opacity-0 group-hover:opacity-100 transition-opacity ml-2">
+              <button className="opacity-0 group-hover:opacity-100 transition-opacity ml-2 focus:opacity-100">
                 <MoreHorizontal className={`h-3 w-3 ${isCurrentUser ? 'text-primary-foreground/80' : 'text-gray-500'}`} />
               </button>
             </DropdownMenuTrigger>
@@ -66,7 +66,7 @@ const MessageItem: React.FC<MessageItemProps> = ({ message, formatDate, onDelete
                 disabled={isDeleting}
               >
                 <Trash2 className="h-3 w-3 mr-2" />
-                {isDeleting ? "Deleting..." : "Delete"}
+                {isDeleting ? "Deleting..." : "Delete Message"}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

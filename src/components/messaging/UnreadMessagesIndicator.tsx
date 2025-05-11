@@ -30,7 +30,7 @@ const UnreadMessagesIndicator: React.FC = () => {
 
     fetchUnreadCount();
 
-    // Set up real-time subscription for new messages
+    // Set up real-time subscription for message changes
     const channel = supabase
       .channel('unread_messages_counter')
       .on(
@@ -67,7 +67,7 @@ const UnreadMessagesIndicator: React.FC = () => {
   if (unreadCount === 0) return null;
 
   return (
-    <Badge variant="destructive" className="ml-1 px-1.5 min-w-5 h-5 flex items-center justify-center">
+    <Badge variant="destructive" className="absolute top-0 right-0 min-w-5 h-5 flex items-center justify-center">
       {unreadCount > 9 ? '9+' : unreadCount}
     </Badge>
   );
