@@ -1,9 +1,10 @@
 
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from '@/context/AuthContext';
 import UserTripsList from './UserTripsList';
 import UserMessageTab from './UserMessageTab';
-import NotificationsTab from '../notifications/NotificationsTab';
+import ContactButton from '@/components/messaging/ContactButton';
 
 interface Trip {
   id: string;
@@ -19,43 +20,55 @@ interface UserProfileTabsProps {
   userId: string;
   username: string;
   isCurrentUserProfile: boolean;
-  currentUserId: string | undefined;
+  currentUserId?: string;
 }
 
-const UserProfileTabs: React.FC<UserProfileTabsProps> = ({ 
-  trips, 
-  userId, 
-  username, 
+const UserProfileTabs: React.FC<UserProfileTabsProps> = ({
+  trips,
+  userId,
+  username,
   isCurrentUserProfile,
-  currentUserId
+  currentUserId,
 }) => {
+  const { user } = useAuth();
+  const canMessage = user && !isCurrentUserProfile && user.id !== userId;
+
   return (
-    <Tabs defaultValue="trips">
-      <TabsList className="w-full mb-4">
-        <TabsTrigger value="trips" className="flex-1">Upcoming Trips</TabsTrigger>
-        {isCurrentUserProfile && (
-          <TabsTrigger value="notifications" className="flex-1">Notifications</TabsTrigger>
-        )}
-        {currentUserId && !isCurrentUserProfile && (
-          <TabsTrigger value="messages" className="flex-1">Messages</TabsTrigger>
-        )}
+    <Tabs defaultValue="trips" className="w-full">
+      <TabsList className="grid w-full grid-cols-2">
+        <TabsTrigger value="trips">Trips</TabsTrigger>
+        <TabsTrigger value="messages">
+          {isCurrentUserProfile ? 'Messages' : 'Contact'}
+        </TabsTrigger>
       </TabsList>
       
-      <TabsContent value="trips">
+      <TabsContent value="trips" className="space-y-4">
         <UserTripsList trips={trips} />
       </TabsContent>
       
-      {isCurrentUserProfile && (
-        <TabsContent value="notifications">
-          <NotificationsTab />
-        </TabsContent>
-      )}
-      
-      {currentUserId && !isCurrentUserProfile && (
-        <TabsContent value="messages">
+      <TabsContent value="messages" className="space-y-4">
+        {isCurrentUserProfile ? (
           <UserMessageTab recipientId={userId} recipientName={username} />
-        </TabsContent>
-      )}
+        ) : canMessage ? (
+          <div className="space-y-4">
+            <div className="flex justify-center">
+              <ContactButton
+                recipientId={userId}
+                recipientName={username}
+                buttonText={`Send Message to ${username}`}
+                variant="default"
+                size="default"
+                className="w-full max-w-sm"
+              />
+            </div>
+            <UserMessageTab recipientId={userId} recipientName={username} />
+          </div>
+        ) : (
+          <div className="text-center text-gray-500 py-8">
+            <p>Please log in to send messages</p>
+          </div>
+        )}
+      </TabsContent>
     </Tabs>
   );
 };

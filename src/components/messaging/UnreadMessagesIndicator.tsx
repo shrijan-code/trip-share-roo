@@ -15,11 +15,13 @@ const UnreadMessagesIndicator: React.FC = () => {
     }
 
     const fetchUnreadCount = async () => {
+      // Get all unread messages where user is the receiver and message is not deleted by receiver
       const { count, error } = await supabase
         .from('messages')
         .select('*', { count: 'exact', head: true })
         .eq('receiver_id', user.id)
-        .eq('read', false);
+        .eq('read', false)
+        .eq('deleted_by_receiver', false);
 
       if (error) {
         console.error('Error fetching unread messages:', error);
@@ -67,7 +69,7 @@ const UnreadMessagesIndicator: React.FC = () => {
   if (unreadCount === 0) return null;
 
   return (
-    <Badge variant="destructive" className="absolute top-0 right-0 min-w-5 h-5 flex items-center justify-center">
+    <Badge variant="destructive" className="absolute -top-1 -right-1 min-w-5 h-5 flex items-center justify-center text-xs">
       {unreadCount > 9 ? '9+' : unreadCount}
     </Badge>
   );

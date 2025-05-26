@@ -7,7 +7,6 @@ import Footer from '@/components/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, MessageCircle, Loader2 } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MessageThread from '@/components/messaging/MessageThread';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -20,6 +19,7 @@ interface MessageContact {
   trip_destination?: string;
   last_message_time?: string;
   unread_count?: number;
+  last_message_content?: string;
 }
 
 const Messages = () => {
@@ -34,7 +34,7 @@ const Messages = () => {
       if (!user) return;
 
       try {
-        // Get all unique contacts from messages
+        // Get all messages where user is either sender or receiver
         const { data: messagesData, error: messagesError } = await supabase
           .from('messages')
           .select(`
@@ -44,6 +44,9 @@ const Messages = () => {
             created_at,
             read,
             trip_id,
+            content,
+            deleted_by_sender,
+            deleted_by_receiver,
             trips:trip_id (
               origin,
               destination
@@ -59,30 +62,38 @@ const Messages = () => {
           return;
         }
 
-        // Get unique contact IDs
-        const contactIds = new Set<string>();
+        // Filter out deleted messages for current user
+        const visibleMessages = messagesData.filter(msg => {
+          if (msg.sender_id === user.id && msg.deleted_by_sender) return false;
+          if (msg.receiver_id === user.id && msg.deleted_by_receiver) return false;
+          return true;
+        });
+
+        // Group messages by contact and trip
         const contactsMap = new Map<string, {
+          contactId: string;
           tripId?: string;
           tripOrigin?: string;
           tripDestination?: string;
           lastMessageTime: string;
+          lastMessageContent: string;
           unreadCount: number;
         }>();
 
-        messagesData.forEach(message => {
+        visibleMessages.forEach(message => {
           const contactId = message.sender_id === user.id ? message.receiver_id : message.sender_id;
-          contactIds.add(contactId);
-
-          // Group by trip_id if exists
           const key = message.trip_id ? `${contactId}-${message.trip_id}` : contactId;
           
-          if (!contactsMap.has(key)) {
+          if (!contactsMap.has(key) || new Date(message.created_at) > new Date(contactsMap.get(key)!.lastMessageTime)) {
+            const existing = contactsMap.get(key);
             contactsMap.set(key, {
+              contactId,
               tripId: message.trip_id || undefined,
               tripOrigin: message.trips?.origin,
               tripDestination: message.trips?.destination,
               lastMessageTime: message.created_at,
-              unreadCount: message.receiver_id === user.id && !message.read ? 1 : 0
+              lastMessageContent: message.content,
+              unreadCount: (existing?.unreadCount || 0) + (message.receiver_id === user.id && !message.read ? 1 : 0)
             });
           } else if (message.receiver_id === user.id && !message.read) {
             const contact = contactsMap.get(key)!;
@@ -91,12 +102,14 @@ const Messages = () => {
           }
         });
 
-        // Fetch profile data for all contacts
-        if (contactIds.size > 0) {
+        // Get unique contact IDs
+        const contactIds = Array.from(new Set(Array.from(contactsMap.values()).map(c => c.contactId)));
+
+        if (contactIds.length > 0) {
           const { data: profilesData, error: profilesError } = await supabase
             .from('profiles')
             .select('id, first_name, last_name, avatar_url')
-            .in('id', Array.from(contactIds));
+            .in('id', contactIds);
 
           if (profilesError) throw profilesError;
 
@@ -104,18 +117,18 @@ const Messages = () => {
           const contactsList: MessageContact[] = [];
           
           contactsMap.forEach((contact, key) => {
-            const [contactId, tripId] = key.includes('-') ? key.split('-') : [key, undefined];
-            const profile = profilesData?.find(p => p.id === contactId);
+            const profile = profilesData?.find(p => p.id === contact.contactId);
             
             if (profile) {
               contactsList.push({
-                id: contactId,
+                id: contact.contactId,
                 name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'User',
                 avatar_url: profile.avatar_url,
                 trip_id: contact.tripId,
                 trip_origin: contact.tripOrigin,
                 trip_destination: contact.tripDestination,
                 last_message_time: contact.lastMessageTime,
+                last_message_content: contact.lastMessageContent,
                 unread_count: contact.unreadCount
               });
             }
@@ -160,6 +173,17 @@ const Messages = () => {
             fetchMessageContacts();
           }
         )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'messages'
+          },
+          () => {
+            fetchMessageContacts();
+          }
+        )
         .subscribe();
 
       return () => {
@@ -178,6 +202,11 @@ const Messages = () => {
     }
     
     return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  };
+
+  const truncateMessage = (content: string, maxLength = 50) => {
+    if (content.length <= maxLength) return content;
+    return content.substring(0, maxLength) + '...';
   };
 
   return (
@@ -205,44 +234,54 @@ const Messages = () => {
                     <div className="text-center text-gray-500 py-8">
                       <MessageCircle className="h-12 w-12 mx-auto text-gray-300 mb-2" />
                       <p>No messages yet</p>
+                      <p className="text-sm mt-2">Start a conversation by messaging a driver or rider from their profile!</p>
                     </div>
                   ) : (
                     <div className="divide-y">
                       {contacts.map((contact) => (
                         <div
                           key={contact.trip_id ? `${contact.id}-${contact.trip_id}` : contact.id}
-                          className={`p-4 cursor-pointer hover:bg-gray-100 ${
+                          className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
                             selectedContact?.id === contact.id && 
                             selectedContact?.trip_id === contact.trip_id ? 
-                            'bg-gray-100' : ''
+                            'bg-blue-50 border-r-2 border-primary' : ''
                           }`}
                           onClick={() => setSelectedContact(contact)}
                         >
                           <div className="flex items-center">
-                            <Avatar className="h-10 w-10 mr-3">
+                            <Avatar className="h-12 w-12 mr-3">
                               <AvatarImage src={contact.avatar_url || undefined} />
                               <AvatarFallback>
-                                <User className="h-5 w-5" />
+                                <User className="h-6 w-6" />
                               </AvatarFallback>
                             </Avatar>
                             <div className="flex-grow min-w-0">
-                              <div className="flex justify-between items-center">
-                                <p className="font-medium truncate">{contact.name}</p>
-                                <span className="text-xs text-gray-500">
-                                  {formatTime(contact.last_message_time)}
-                                </span>
+                              <div className="flex justify-between items-start">
+                                <div className="min-w-0 flex-grow">
+                                  <p className={`font-medium truncate ${(contact.unread_count ?? 0) > 0 ? 'font-bold' : ''}`}>
+                                    {contact.name}
+                                  </p>
+                                  {contact.trip_origin && contact.trip_destination && (
+                                    <p className="text-xs text-gray-500 truncate">
+                                      Trip: {contact.trip_origin} → {contact.trip_destination}
+                                    </p>
+                                  )}
+                                  <p className={`text-sm truncate mt-1 ${(contact.unread_count ?? 0) > 0 ? 'font-semibold text-gray-900' : 'text-gray-600'}`}>
+                                    {truncateMessage(contact.last_message_content || '')}
+                                  </p>
+                                </div>
+                                <div className="flex flex-col items-end ml-2">
+                                  <span className="text-xs text-gray-500 whitespace-nowrap">
+                                    {formatTime(contact.last_message_time)}
+                                  </span>
+                                  {(contact.unread_count ?? 0) > 0 && (
+                                    <span className="bg-primary text-primary-foreground text-xs rounded-full h-5 min-w-5 flex items-center justify-center px-1 mt-1">
+                                      {contact.unread_count}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
-                              {contact.trip_origin && contact.trip_destination && (
-                                <p className="text-xs text-gray-500 truncate">
-                                  Trip: {contact.trip_origin} → {contact.trip_destination}
-                                </p>
-                              )}
                             </div>
-                            {(contact.unread_count ?? 0) > 0 && (
-                              <span className="ml-2 bg-primary text-primary-foreground text-xs rounded-full h-5 min-w-5 flex items-center justify-center px-1">
-                                {contact.unread_count}
-                              </span>
-                            )}
                           </div>
                         </div>
                       ))}
@@ -286,7 +325,7 @@ const Messages = () => {
                     <MessageCircle className="h-16 w-16 text-gray-300 mb-4" />
                     <h3 className="text-xl font-medium mb-2">Your Messages</h3>
                     <p className="text-gray-500 max-w-md">
-                      Select a conversation from the list to view your messages.
+                      Select a conversation from the list to view your messages. You can start new conversations by visiting driver or rider profiles.
                     </p>
                   </div>
                 )}

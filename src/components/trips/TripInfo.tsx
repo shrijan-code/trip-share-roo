@@ -1,169 +1,121 @@
 
 import React from 'react';
-import { TripProps } from '@/components/TripCard';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar, Clock, MapPin, Users, MessageCircle, Shield, User, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
-import MessageButton from '../messaging/MessageButton';
-import { useAuth } from '@/context/AuthContext';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { MapPin, Clock, DollarSign, Users, Star, Phone, MessageCircle, User } from "lucide-react";
+import { TripProps } from '@/components/TripCard';
+import ContactButton from '@/components/messaging/ContactButton';
 
 interface TripInfoProps {
   trip: TripProps;
-  onContactDriver?: () => void;
-  onViewProfile?: () => void;
+  onContactDriver: () => void;
+  onViewProfile: () => void;
 }
 
 const TripInfo: React.FC<TripInfoProps> = ({ trip, onContactDriver, onViewProfile }) => {
-  const { toast } = useToast();
-  const { user } = useAuth();
-  
-  const handleContactDriver = () => {
-    if (trip.driver.phone) {
-      navigator.clipboard.writeText(trip.driver.phone).then(() => {
-        toast({
-          title: "Phone number copied!",
-          description: `You can now call or text ${trip.driver.name} at ${trip.driver.phone}`,
-        });
-      });
-    } else if (onContactDriver) {
-      onContactDriver();
-    } else {
-      toast({
-        title: "Contact information unavailable",
-        description: "This driver hasn't provided contact information yet.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const showMessageButton = !!user && user.id !== trip.driver.id;
-
   return (
-    <Card>
-      <CardHeader className="border-b">
-        <CardTitle className="text-2xl">{trip.from} to {trip.to}</CardTitle>
-      </CardHeader>
-      <CardContent className="pt-6">
-        <div className="space-y-6">
-          {/* Trip details */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
-            <div className="flex items-start gap-3">
-              <Calendar className="h-5 w-5 text-gray-500 mt-0.5" />
-              <div>
-                <p className="font-medium">Date</p>
-                <p className="text-gray-600">{trip.date}</p>
-              </div>
+    <div className="space-y-6">
+      {/* Trip Overview */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl">Trip Details</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center space-x-3">
+            <MapPin className="h-5 w-5 text-primary" />
+            <div>
+              <p className="font-medium">Route</p>
+              <p className="text-gray-600">{trip.from} → {trip.to}</p>
             </div>
-            <div className="flex items-start gap-3">
-              <Clock className="h-5 w-5 text-gray-500 mt-0.5" />
-              <div>
-                <p className="font-medium">Departure time</p>
-                <p className="text-gray-600">{trip.time}</p>
-              </div>
+          </div>
+
+          <div className="flex items-center space-x-3">
+            <Clock className="h-5 w-5 text-primary" />
+            <div>
+              <p className="font-medium">Departure</p>
+              <p className="text-gray-600">{trip.date} at {trip.time}</p>
             </div>
-            <div className="flex items-start gap-3">
-              <MapPin className="h-5 w-5 text-gray-500 mt-0.5" />
-              <div>
-                <p className="font-medium">Pickup location</p>
-                <p className="text-gray-600">Central Station, {trip.from}</p>
-              </div>
+          </div>
+
+          <div className="flex items-center space-x-3">
+            <DollarSign className="h-5 w-5 text-primary" />
+            <div>
+              <p className="font-medium">Price per seat</p>
+              <p className="text-gray-600">${trip.price}</p>
             </div>
-            <div className="flex items-start gap-3">
-              <MapPin className="h-5 w-5 text-gray-500 mt-0.5" />
-              <div>
-                <p className="font-medium">Drop-off location</p>
-                <p className="text-gray-600">Central Station, {trip.to}</p>
-              </div>
+          </div>
+
+          <div className="flex items-center space-x-3">
+            <Users className="h-5 w-5 text-primary" />
+            <div>
+              <p className="font-medium">Available seats</p>
+              <p className="text-gray-600">{trip.seats} seats</p>
             </div>
-            <div className="flex items-start gap-3">
-              <Users className="h-5 w-5 text-gray-500 mt-0.5" />
-              <div>
-                <p className="font-medium">Available seats</p>
-                <p className="text-gray-600">{trip.seats} seats</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <Shield className="h-5 w-5 text-gray-500 mt-0.5" />
-              <div>
-                <p className="font-medium">Trip protection</p>
-                <p className="text-gray-600">Includes insurance coverage</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Driver Information */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl">Driver Information</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center space-x-4 mb-4">
+            <Avatar className="h-16 w-16">
+              <AvatarImage src={trip.driver.avatar} alt={trip.driver.name} />
+              <AvatarFallback>
+                <User className="h-8 w-8" />
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-grow">
+              <h3 className="text-lg font-semibold">{trip.driver.name}</h3>
+              <div className="flex items-center space-x-1 text-sm text-gray-600">
+                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                <span>{trip.driver.rating}</span>
+                <span>•</span>
+                <span>{trip.driver.trips} trips</span>
               </div>
             </div>
           </div>
-          
-          {/* Driver information */}
-          <div className="border-t pt-6 mt-6">
-            <h3 className="font-semibold text-lg mb-4">About the driver</h3>
-            <div className="flex items-center">
-              <Avatar className="h-16 w-16 mr-4">
-                <AvatarImage src={trip.driver.avatar} />
-                <AvatarFallback>{trip.driver.name.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <div>
-                <h4 className="text-lg font-medium">{trip.driver.name}</h4>
-                <div className="flex items-center text-gray-600">
-                  <span className="flex items-center text-yellow-500">
-                    ★★★★★ {trip.driver.rating}
-                  </span>
-                  <span className="mx-2">•</span>
-                  <span>{trip.driver.trips} trips</span>
-                </div>
-              </div>
-            </div>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" onClick={handleContactDriver}>
-                {trip.driver.phone ? (
-                  <>
-                    <Phone className="h-4 w-4 mr-2" />
-                    Copy Phone Number
-                  </>
-                ) : (
-                  <>
-                    <Phone className="h-4 w-4 mr-2" />
-                    Contact Driver
-                  </>
-                )}
+
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button onClick={onViewProfile} variant="outline" className="flex-1">
+              <User className="h-4 w-4 mr-2" />
+              View Profile
+            </Button>
+            
+            <ContactButton
+              recipientId={trip.driver.id}
+              recipientName={trip.driver.name}
+              tripId={trip.id}
+              buttonText="Message Driver"
+              className="flex-1"
+            />
+
+            {trip.driver.phone && (
+              <Button variant="outline" className="flex-1">
+                <Phone className="h-4 w-4 mr-2" />
+                Call
               </Button>
-              
-              {showMessageButton && (
-                <MessageButton 
-                  recipientId={trip.driver.id}
-                  recipientName={trip.driver.name}
-                  tripId={trip.id}
-                />
-              )}
-              
-              <Button variant="ghost" size="sm" onClick={onViewProfile}>
-                <User className="h-4 w-4 mr-2" />
-                View Profile
-              </Button>
-            </div>
+            )}
           </div>
-          
-          {/* Trip rules */}
-          <div className="border-t pt-6 mt-6">
-            <h3 className="font-semibold text-lg mb-4">Trip rules & preferences</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
-              <div className="flex items-center">
-                <Badge variant="outline" className="mr-2">No smoking</Badge>
-              </div>
-              <div className="flex items-center">
-                <Badge variant="outline" className="mr-2">Small luggage only</Badge>
-              </div>
-              <div className="flex items-center">
-                <Badge variant="outline" className="mr-2">Pets allowed</Badge>
-              </div>
-              <div className="flex items-center">
-                <Badge variant="outline" className="mr-2">Music friendly</Badge>
-              </div>
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      {/* Trip Description */}
+      {trip.description && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-xl">Trip Description</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-700 leading-relaxed">{trip.description}</p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 };
 
