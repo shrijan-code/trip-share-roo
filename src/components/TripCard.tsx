@@ -18,6 +18,7 @@ export interface TripProps {
   price: number;
   seats: number;
   isPublic?: boolean;
+  description?: string;
   driver: {
     id: string;
     name: string;
