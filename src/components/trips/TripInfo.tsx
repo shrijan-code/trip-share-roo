@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MapPin, Clock, DollarSign, Users, Star, Phone, MessageCircle, User } from "lucide-react";
 import { TripProps } from '@/components/TripCard';
 import ContactButton from '@/components/messaging/ContactButton';
+import { useAuth } from '@/context/AuthContext';
 
 interface TripInfoProps {
   trip: TripProps;
@@ -14,6 +15,9 @@ interface TripInfoProps {
 }
 
 const TripInfo: React.FC<TripInfoProps> = ({ trip, onContactDriver, onViewProfile }) => {
+  const { user } = useAuth();
+  const isCurrentUserDriver = user && user.id === trip.driver.id;
+
   return (
     <div className="space-y-6">
       {/* Trip Overview */}
@@ -59,7 +63,9 @@ const TripInfo: React.FC<TripInfoProps> = ({ trip, onContactDriver, onViewProfil
       {/* Driver Information */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl">Driver Information</CardTitle>
+          <CardTitle className="text-xl">
+            {isCurrentUserDriver ? "Your Trip" : "Driver Information"}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center space-x-4 mb-4">
@@ -80,27 +86,29 @@ const TripInfo: React.FC<TripInfoProps> = ({ trip, onContactDriver, onViewProfil
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button onClick={onViewProfile} variant="outline" className="flex-1">
-              <User className="h-4 w-4 mr-2" />
-              View Profile
-            </Button>
-            
-            <ContactButton
-              recipientId={trip.driver.id}
-              recipientName={trip.driver.name}
-              tripId={trip.id}
-              buttonText="Message Driver"
-              className="flex-1"
-            />
-
-            {trip.driver.phone && (
-              <Button variant="outline" className="flex-1">
-                <Phone className="h-4 w-4 mr-2" />
-                Call
+          {!isCurrentUserDriver && (
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button onClick={onViewProfile} variant="outline" className="flex-1">
+                <User className="h-4 w-4 mr-2" />
+                View Profile
               </Button>
-            )}
-          </div>
+              
+              <ContactButton
+                recipientId={trip.driver.id}
+                recipientName={trip.driver.name}
+                tripId={trip.id}
+                buttonText="Message Driver"
+                className="flex-1"
+              />
+
+              {trip.driver.phone && (
+                <Button variant="outline" className="flex-1">
+                  <Phone className="h-4 w-4 mr-2" />
+                  Call
+                </Button>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 

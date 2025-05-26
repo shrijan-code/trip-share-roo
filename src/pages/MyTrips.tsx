@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -5,10 +6,19 @@ import Footer from '@/components/Footer';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Calendar, Clock, Users, Plus, AlertCircle, Globe, Lock } from "lucide-react";
+import { MapPin, Calendar, Clock, Users, Plus, AlertCircle, Globe, Lock, User } from "lucide-react";
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+import ContactButton from '@/components/messaging/ContactButton';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+interface PassengerProfile {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  avatar_url: string | null;
+}
 
 interface Trip {
   id: string;
@@ -24,6 +34,7 @@ interface Trip {
     passenger_id: string;
     seats: number;
     status: string;
+    passenger?: PassengerProfile;
   }[] | null;
 }
 
@@ -42,7 +53,15 @@ const MyTrips = () => {
           .from('trips')
           .select(`
             *,
-            bookings (*)
+            bookings (
+              *,
+              passenger:profiles!bookings_passenger_id_fkey (
+                id,
+                first_name,
+                last_name,
+                avatar_url
+              )
+            )
           `)
           .eq('driver_id', user.id);
 
@@ -210,9 +229,21 @@ const MyTrips = () => {
                               <div className="space-y-3">
                                 {trip.bookings.map((booking) => (
                                   <div key={booking.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-md">
-                                    <div>
-                                      <p className="font-medium">Passenger ID: {booking.passenger_id.slice(0, 8)}...</p>
-                                      <p className="text-sm text-gray-600">Seats: {booking.seats}</p>
+                                    <div className="flex items-center gap-3">
+                                      <Avatar className="h-10 w-10">
+                                        <AvatarImage src={booking.passenger?.avatar_url || undefined} />
+                                        <AvatarFallback>
+                                          <User className="h-5 w-5" />
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <div>
+                                        <p className="font-medium">
+                                          {booking.passenger?.first_name && booking.passenger?.last_name 
+                                            ? `${booking.passenger.first_name} ${booking.passenger.last_name}` 
+                                            : 'Passenger'}
+                                        </p>
+                                        <p className="text-sm text-gray-600">Seats: {booking.seats}</p>
+                                      </div>
                                     </div>
                                     <div className="flex items-center gap-2">
                                       {booking.status === 'pending' ? (
@@ -239,6 +270,16 @@ const MyTrips = () => {
                                           {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                                         </Badge>
                                       )}
+                                      <ContactButton
+                                        recipientId={booking.passenger_id}
+                                        recipientName={booking.passenger?.first_name && booking.passenger?.last_name 
+                                          ? `${booking.passenger.first_name} ${booking.passenger.last_name}` 
+                                          : 'Passenger'}
+                                        tripId={trip.id}
+                                        buttonText="Contact"
+                                        variant="outline"
+                                        size="sm"
+                                      />
                                     </div>
                                   </div>
                                 ))}

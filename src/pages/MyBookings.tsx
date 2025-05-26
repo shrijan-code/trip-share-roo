@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -5,11 +6,20 @@ import Footer from '@/components/Footer';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, MapPin, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { Calendar, Clock, MapPin, CheckCircle, XCircle, AlertCircle, User } from "lucide-react";
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import CompletePaymentButton from '@/components/trips/CompletePaymentButton';
+import ContactButton from '@/components/messaging/ContactButton';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+interface DriverProfile {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  avatar_url: string | null;
+}
 
 interface Booking {
   id: string;
@@ -24,6 +34,7 @@ interface Booking {
     departure_date: string;
     price: number;
     driver_id: string;
+    driver?: DriverProfile;
   }
 }
 
@@ -47,7 +58,13 @@ const MyBookings = () => {
               destination,
               departure_date,
               price,
-              driver_id
+              driver_id,
+              driver:profiles!trips_driver_id_fkey (
+                id,
+                first_name,
+                last_name,
+                avatar_url
+              )
             )
           `)
           .eq('passenger_id', user.id);
@@ -131,6 +148,36 @@ const MyBookings = () => {
                           </h3>
                           {getStatusBadge(booking.status)}
                         </div>
+                        
+                        {/* Driver Info */}
+                        {booking.trip.driver && (
+                          <div className="flex items-center gap-3 mb-4 p-3 bg-gray-50 rounded-md">
+                            <Avatar className="h-10 w-10">
+                              <AvatarImage src={booking.trip.driver.avatar_url || undefined} />
+                              <AvatarFallback>
+                                <User className="h-5 w-5" />
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-grow">
+                              <p className="font-medium">
+                                Driver: {booking.trip.driver.first_name && booking.trip.driver.last_name 
+                                  ? `${booking.trip.driver.first_name} ${booking.trip.driver.last_name}` 
+                                  : 'Driver'}
+                              </p>
+                            </div>
+                            <ContactButton
+                              recipientId={booking.trip.driver_id}
+                              recipientName={booking.trip.driver.first_name && booking.trip.driver.last_name 
+                                ? `${booking.trip.driver.first_name} ${booking.trip.driver.last_name}` 
+                                : 'Driver'}
+                              tripId={booking.trip_id}
+                              buttonText="Contact Driver"
+                              variant="outline"
+                              size="sm"
+                            />
+                          </div>
+                        )}
+                        
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8 mb-4">
                           <div className="flex items-start gap-3">
                             <Calendar className="h-5 w-5 text-gray-500 mt-0.5" />
