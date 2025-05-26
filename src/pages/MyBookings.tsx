@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -34,7 +33,7 @@ interface Booking {
     departure_date: string;
     price: number;
     driver_id: string;
-    driver?: DriverProfile;
+    driver?: DriverProfile | null;
   }
 }
 
@@ -49,7 +48,8 @@ const MyBookings = () => {
       if (!user) return;
       
       try {
-        const { data, error } = await supabase
+        // First fetch bookings with trip data
+        const { data: bookingsData, error: bookingsError } = await supabase
           .from('bookings')
           .select(`
             *,
@@ -58,20 +58,32 @@ const MyBookings = () => {
               destination,
               departure_date,
               price,
-              driver_id,
-              driver:profiles!trips_driver_id_fkey (
-                id,
-                first_name,
-                last_name,
-                avatar_url
-              )
+              driver_id
             )
           `)
           .eq('passenger_id', user.id);
 
-        if (error) throw error;
+        if (bookingsError) throw bookingsError;
         
-        setBookings(data || []);
+        if (bookingsData) {
+          // Fetch driver profiles separately
+          const driverIds = bookingsData.map(booking => booking.trip.driver_id).filter(Boolean);
+          const { data: driversData } = await supabase
+            .from('profiles')
+            .select('id, first_name, last_name, avatar_url')
+            .in('id', driverIds);
+
+          // Combine the data
+          const bookingsWithDrivers = bookingsData.map(booking => ({
+            ...booking,
+            trip: {
+              ...booking.trip,
+              driver: driversData?.find(driver => driver.id === booking.trip.driver_id) || null
+            }
+          }));
+
+          setBookings(bookingsWithDrivers);
+        }
       } catch (error) {
         console.error('Error fetching bookings:', error);
         toast({

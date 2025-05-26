@@ -34,7 +34,7 @@ interface Trip {
     passenger_id: string;
     seats: number;
     status: string;
-    passenger?: PassengerProfile;
+    passenger?: PassengerProfile | null;
   }[] | null;
 }
 
@@ -49,25 +49,44 @@ const MyTrips = () => {
       if (!user) return;
       
       try {
-        const { data, error } = await supabase
+        // First fetch trips with bookings
+        const { data: tripsData, error: tripsError } = await supabase
           .from('trips')
           .select(`
             *,
             bookings (
-              *,
-              passenger:profiles!bookings_passenger_id_fkey (
-                id,
-                first_name,
-                last_name,
-                avatar_url
-              )
+              id,
+              passenger_id,
+              seats,
+              status
             )
           `)
           .eq('driver_id', user.id);
 
-        if (error) throw error;
+        if (tripsError) throw tripsError;
         
-        setTrips(data || []);
+        if (tripsData) {
+          // Fetch passenger profiles separately
+          const passengerIds = tripsData
+            .flatMap(trip => trip.bookings?.map(booking => booking.passenger_id) || [])
+            .filter(Boolean);
+          
+          const { data: passengersData } = await supabase
+            .from('profiles')
+            .select('id, first_name, last_name, avatar_url')
+            .in('id', passengerIds);
+
+          // Combine the data
+          const tripsWithPassengers = tripsData.map(trip => ({
+            ...trip,
+            bookings: trip.bookings?.map(booking => ({
+              ...booking,
+              passenger: passengersData?.find(passenger => passenger.id === booking.passenger_id) || null
+            })) || null
+          }));
+
+          setTrips(tripsWithPassengers);
+        }
       } catch (error) {
         console.error('Error fetching trips:', error);
         toast({
